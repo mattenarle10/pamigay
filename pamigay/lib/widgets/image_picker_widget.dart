@@ -13,6 +13,7 @@ class ImagePickerWidget extends StatelessWidget {
   final Color backgroundColor;
   final Color iconColor;
   final double? width;
+  final File? currentImage;
 
   const ImagePickerWidget({
     Key? key,
@@ -25,6 +26,7 @@ class ImagePickerWidget extends StatelessWidget {
     this.backgroundColor = Colors.blue,
     this.iconColor = PamigayColors.primary,
     this.width,
+    this.currentImage,
   }) : super(key: key);
 
   Future<void> _showImageSourceOptions(BuildContext context) async {
@@ -78,6 +80,8 @@ class ImagePickerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final File? displayImage = imageFile ?? currentImage;
+    
     if (isCircular) {
       return GestureDetector(
         onTap: () => _showImageSourceOptions(context),
@@ -102,10 +106,10 @@ class ImagePickerWidget extends StatelessWidget {
               child: CircleAvatar(
                 radius: height / 2,
                 backgroundColor: Colors.grey[200],
-                backgroundImage: imageFile != null 
-                    ? FileImage(imageFile!) 
+                backgroundImage: displayImage != null 
+                    ? FileImage(displayImage) 
                     : null,
-                child: (imageFile == null)
+                child: (displayImage == null)
                     ? Icon(Icons.person, size: height / 1.5, color: Colors.grey)
                     : null,
               ),
@@ -151,11 +155,11 @@ class ImagePickerWidget extends StatelessWidget {
               width: 1,
             ),
           ),
-          child: imageFile != null
+          child: displayImage != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(borderRadius),
                   child: Image.file(
-                    imageFile!,
+                    displayImage,
                     fit: BoxFit.cover,
                   ),
                 )

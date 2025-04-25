@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:pamigay/screens/dashboard_screen.dart';
-import 'package:pamigay/screens/landing_screen.dart';
+import 'package:pamigay/screens/common/dashboard_screen.dart';
+import 'package:pamigay/screens/common/auth/landing_screen.dart';
 import 'package:pamigay/services/auth_service.dart';
 import 'package:pamigay/utils/constants.dart';
 
@@ -50,6 +50,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const SplashScreen(),
+      routes: {
+        '/dashboard': (context) => const DashboardScreen(),
+      },
     );
   }
 }

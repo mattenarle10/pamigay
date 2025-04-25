@@ -7,6 +7,7 @@ class DetailItem extends StatelessWidget {
   final String value;
   final Color? iconColor;
   final bool fullWidth;
+  final String? title;
 
   const DetailItem({
     Key? key,
@@ -15,10 +16,13 @@ class DetailItem extends StatelessWidget {
     required this.value,
     this.iconColor,
     this.fullWidth = false,
+    this.title,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final displayLabel = title ?? label;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -42,7 +46,7 @@ class DetailItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  displayLabel,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
@@ -55,6 +59,8 @@ class DetailItem extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: fullWidth ? 3 : 2,
                 ),
               ],
             ),

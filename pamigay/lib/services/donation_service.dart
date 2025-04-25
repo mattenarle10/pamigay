@@ -106,12 +106,28 @@ class DonationService {
       return '';
     }
     
-    // Check if image already contains the uploads/donation_images/ path
-    if (imagePath.startsWith('uploads/donation_images/') || imagePath.startsWith('http')) {
-      return imagePath.startsWith('http') ? imagePath : baseUrl.replaceFirst('/mobile', '') + '/' + imagePath;
-    } else {
-      return baseUrl.replaceFirst('/mobile', '') + '/uploads/donation_images/' + imagePath;
+    // Check if image already contains http or https (full URL)
+    if (imagePath.startsWith('http')) {
+      return imagePath;
     }
+    
+    // In local development, use the local web server URL
+    // Strip API endpoints from baseUrl to get the web root
+    String webRoot = baseUrl;
+    if (webRoot.contains('/mobile')) {
+      webRoot = webRoot.substring(0, webRoot.indexOf('/mobile'));
+    }
+    
+    // Ensure there are no double slashes by removing any leading slashes
+    String cleanImagePath = imagePath.replaceAll(RegExp(r'^/+'), '');
+    
+    // Construct the full URL
+    return '$webRoot/$cleanImagePath';
+  }
+  
+  // Get full image URL (alias for getDonationImageUrl for backward compatibility)
+  String getFullImageUrl(String? imagePath) {
+    return getDonationImageUrl(imagePath);
   }
   
   // Add a new donation

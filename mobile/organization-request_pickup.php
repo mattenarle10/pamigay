@@ -7,7 +7,7 @@ require_once 'api_response.php';
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 ini_set('log_errors', 1);
-ini_set('error_log', '/Applications/XAMPP/xamppfiles/logs/php_error.log');
+ini_set('error_log', '/Applications/XAMPP/xamppfiles/logs/php_error_log');
 
 // Set content type to JSON
 header('Content-Type: application/json');
@@ -40,6 +40,9 @@ $pickup_time = isset($data['pickup_time']) ? mysqli_real_escape_string($conn, $d
 
 // Verify user is a collector/organization
 try {
+    // Log database connection status
+    error_log('Database connection status: ' . ($conn ? 'Connected' : 'Not connected'));
+    
     $check_collector = mysqli_query($conn, "SELECT id FROM users WHERE id = '$collector_id' AND role = 'Organization'");
     if (!$check_collector) {
         throw new Exception("Query error: " . mysqli_error($conn));
@@ -90,11 +93,22 @@ try {
         throw new Exception("Failed to start transaction: " . mysqli_error($conn));
     }
 
-    // Create pickup request
+    // Check the allowed values for the status ENUM
+    $status_check = mysqli_query($conn, "SHOW COLUMNS FROM food_pickups LIKE 'status'");
+    if (!$status_check) {
+        throw new Exception("Failed to check status column: " . mysqli_error($conn));
+    }
+    
+    $status_info = mysqli_fetch_assoc($status_check);
+    error_log("Status column info: " . json_encode($status_info));
+    
+    // Create pickup request - ensure status is one of the allowed ENUM values
     $pickup_time_value = $pickup_time ? "'$pickup_time'" : "NULL";
+    $allowed_statuses = explode("','", substr($status_info['Type'], 6, -2));
+    $status = in_array('Requested', $allowed_statuses) ? 'Requested' : $allowed_statuses[0];
     $create_pickup = "
         INSERT INTO food_pickups (donation_id, collector_id, pickup_time, notes, status)
-        VALUES ('$donation_id', '$collector_id', $pickup_time_value, '$notes', 'Requested')
+        VALUES ('$donation_id', '$collector_id', $pickup_time_value, '$notes', '$status')
     ";
     
     error_log("Executing query: $create_pickup");
@@ -145,7 +159,7 @@ try {
     
     ApiResponse::send(ApiResponse::success('Pickup request created successfully', [
         'pickup_id' => $pickup_id,
-        'status' => 'Requested',
+        'status' => $status,
         'restaurant' => $restaurant,
         'donation' => $donation_details
     ]));
@@ -160,17 +174,4 @@ catch (Exception $e) {
 }
 
 mysqli_close($conn);
-
-// Helper function to get POST data
-function getPostData() {
-    $json = file_get_contents('php://input');
-    $data = json_decode($json, true);
-    
-    // If JSON decoding failed, fall back to POST data
-    if ($data === null) {
-        return $_POST;
-    }
-    
-    return $data;
-}
 ?>

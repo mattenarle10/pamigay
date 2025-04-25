@@ -5,6 +5,9 @@ class StatusCard extends StatelessWidget {
   final Color statusColor;
   final String statusIcon;
   final String description;
+  final IconData? iconData;
+  final Color? backgroundColor;
+  final EdgeInsetsGeometry? margin;
 
   const StatusCard({
     Key? key,
@@ -12,15 +15,18 @@ class StatusCard extends StatelessWidget {
     required this.statusColor,
     required this.statusIcon,
     required this.description,
+    this.iconData,
+    this.backgroundColor,
+    this.margin,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      margin: margin ?? const EdgeInsets.fromLTRB(16, 16, 16, 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: backgroundColor ?? statusColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: statusColor.withOpacity(0.3),
@@ -35,10 +41,12 @@ class StatusCard extends StatelessWidget {
               color: statusColor.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Text(
-              statusIcon,
-              style: const TextStyle(fontSize: 20),
-            ),
+            child: iconData != null 
+                ? Icon(iconData, color: statusColor, size: 24)
+                : Text(
+                    statusIcon,
+                    style: const TextStyle(fontSize: 20),
+                  ),
           ),
           const SizedBox(width: 16),
           Expanded(

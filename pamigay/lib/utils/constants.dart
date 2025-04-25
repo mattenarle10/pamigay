@@ -7,25 +7,6 @@ String getBaseUrl() {
   return dotenv.get('API_BASE_URL');
 }
 
-// API Endpoints
-class ApiConstants {
-  static const String baseUrl = 'http://10.0.2.2/pamigay-web';
-  
-  // Auth endpoints
-  static const String loginEndpoint = '/mobile/login.php';
-  static const String registerEndpoint = '/mobile/register.php';
-  
-  // User endpoints
-  static const String getUserInfoEndpoint = '/mobile/user-get_user_info.php';
-  static const String updateProfileEndpoint = '/mobile/user-update_profile.php';
-  static const String uploadProfileImageEndpoint = '/mobile/upload_profile_image.php';
-  
-  // Donation endpoints
-  static const String addDonationEndpoint = '/mobile/resto-add_food_donation.php';
-  static const String uploadDonationImageEndpoint = '/mobile/upload_donation_image.php';
-  static const String getDonationsEndpoint = '/mobile/get_donations.php';
-}
-
 // Dynamic baseUrl from environment variables
 final String baseUrl = getBaseUrl();
 

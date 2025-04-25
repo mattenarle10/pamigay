@@ -49,8 +49,9 @@ if (!isset($_FILES['donation_image']) || $_FILES['donation_image']['error'] != 0
 }
 
 // Create uploads directory if it doesn't exist
+$upload_dir = '../uploads/donation_images/';
 // Use absolute path instead of relative path
-$upload_dir = '/Applications/XAMPP/xamppfiles/htdocs/pamigay-web/uploads/donation_images/';
+//$upload_dir = '/Applications/XAMPP/xamppfiles/htdocs/pamigay-web/uploads/donation_images/';
 if (!file_exists($upload_dir)) {
     mkdir($upload_dir, 0777, true);
 }
