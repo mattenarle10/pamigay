@@ -17,7 +17,7 @@ class PickupCard extends StatelessWidget {
   final bool isPending;
   
   /// Callback function when the pickup is cancelled
-  final Function(Map<String, dynamic>) onCancel;
+  final Function(Map<String, dynamic>)? onCancel;
   
   /// Callback function when the user wants to view pickup details
   final Function() onViewDetails;
@@ -26,7 +26,7 @@ class PickupCard extends StatelessWidget {
     Key? key,
     required this.pickup,
     required this.isPending,
-    required this.onCancel,
+    this.onCancel,
     required this.onViewDetails,
   }) : super(key: key);
 
@@ -50,6 +50,9 @@ class PickupCard extends StatelessWidget {
 
   /// Builds the header section of the card with status information
   Widget _buildHeader(String status, String pickupId) {
+    // Check if this is a system-cancelled pickup (donation assigned to another organization)
+    final isSystemCancelled = pickup['system_cancelled'] == true;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -61,7 +64,14 @@ class PickupCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          StatusBadge.forPickupStatus(status),
+          isSystemCancelled 
+              ? StatusBadge(
+                  status: 'Assigned to Another',
+                  icon: Icons.info_outline,
+                  color: Colors.red,
+                  textColor: Colors.white,
+                )
+              : StatusBadge.forPickupStatus(status),
           const Spacer(),
           Text(
             '#$pickupId',
@@ -77,6 +87,9 @@ class PickupCard extends StatelessWidget {
 
   /// Builds the main content section of the card
   Widget _buildContent(String donationName, String restaurantName, String pickupTimeStr) {
+    // Check if this is a system-cancelled pickup (donation assigned to another organization)
+    final isSystemCancelled = pickup['system_cancelled'] == true;
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -133,6 +146,31 @@ class PickupCard extends StatelessWidget {
             ],
           ),
           
+          // System cancelled message
+          if (isSystemCancelled)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This donation has been assigned to another organization',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
           // Notes if available
           if (pickup['notes'] != null && pickup['notes'].toString().isNotEmpty)
             Padding(
@@ -165,12 +203,12 @@ class PickupCard extends StatelessWidget {
   Widget _buildFooter(BuildContext context, String status) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: isPending && status == 'Requested'
+      child: isPending && status == 'Requested' && onCancel != null
         ? Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton.icon(
-                onPressed: () => onCancel(pickup),
+                onPressed: () => onCancel!(pickup),
                 icon: const Icon(Icons.cancel, size: 16),
                 label: const Text('Cancel'),
                 style: OutlinedButton.styleFrom(

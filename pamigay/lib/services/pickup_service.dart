@@ -44,13 +44,10 @@ class PickupService {
       
       print('Request body: $requestBody');
       
-      // Add proper headers for form data
+      // Attempt as form data first
       final response = await http.post(
         Uri.parse('$baseUrl$requestPickupEndpoint'),
         body: requestBody,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
       );
       
       print('Request pickup status code: ${response.statusCode}');
@@ -64,11 +61,10 @@ class PickupService {
           'data': jsonResponse['data'],
         };
       } else {
-        String errorBody = response.body.isNotEmpty ? response.body : 'No response body';
-        print('Failed to request pickup: ${response.statusCode}, Body: $errorBody');
+        print('Failed to request pickup: ${response.statusCode}');
         return {
           'success': false,
-          'message': 'Failed to request pickup. Server returned ${response.statusCode}: $errorBody',
+          'message': 'Failed to request pickup. Server returned ${response.statusCode}: ${response.body}',
         };
       }
     } catch (e) {
@@ -89,6 +85,14 @@ class PickupService {
       }
       
       final response = await http.get(Uri.parse(url));
+      print('Get my pickups status code: ${response.statusCode}');
+      print('Get my pickups response: ${response.body}');
+      
+      // Check if response is XML (error) or JSON
+      if (response.body.trim().startsWith('<?xml')) {
+        print('Received XML response instead of JSON');
+        return [];
+      }
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -111,7 +115,7 @@ class PickupService {
     }
   }
   
-  // Update pickup status
+  // Update pickup status (for organization to cancel their own pickup)
   Future<Map<String, dynamic>> updatePickup({
     required String pickupId,
     required String status,
@@ -119,40 +123,36 @@ class PickupService {
     String? collectorId,
   }) async {
     try {
-      // Get collector ID from local storage if not provided
-      final String? userId = collectorId;
-      
-      if (userId == null) {
-        return {
-          'success': false,
-          'message': 'Organization ID is required',
-        };
-      }
-      
       final Map<String, String> requestBody = {
         'pickup_id': pickupId,
         'status': status,
-        'collector_id': userId,
       };
+      
+      // Add collector_id if provided (required by the backend)
+      if (collectorId != null) {
+        requestBody['collector_id'] = collectorId;
+      }
       
       if (notes != null) {
         requestBody['notes'] = notes;
       }
       
-      print('Updating pickup: $requestBody');
+      print('Organization update pickup request body: $requestBody');
       
       final response = await http.post(
         Uri.parse('$baseUrl$updatePickupEndpoint'),
         body: requestBody,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
       );
       
-      print('Update pickup response: ${response.body}');
+      print('Organization update pickup status code: ${response.statusCode}');
+      print('Organization update pickup response: ${response.body}');
       
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
+        
+        // Add a small delay to ensure the database has time to update
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         return {
           'success': jsonResponse['success'] == true,
           'message': jsonResponse['message'],
@@ -162,7 +162,7 @@ class PickupService {
         print('Failed to update pickup: ${response.statusCode}');
         return {
           'success': false,
-          'message': 'Failed to update pickup. Server returned ${response.statusCode}',
+          'message': 'Failed to update pickup. Server returned ${response.statusCode}: ${response.body}',
         };
       }
     } catch (e) {
@@ -185,11 +185,17 @@ class PickupService {
       print('Get restaurant pickup requests response: ${response.body}');
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final jsonResponse = json.decode(response.body);
+        return {
+          'success': jsonResponse['success'] == true,
+          'message': jsonResponse['message'],
+          'data': jsonResponse['data'],
+        };
       } else {
+        print('Failed to get restaurant pickup requests: ${response.statusCode}');
         return {
           'success': false,
-          'message': 'Failed to get pickup requests. Status code: ${response.statusCode}',
+          'message': 'Failed to get pickup requests. Server returned ${response.statusCode}: ${response.body}',
           'data': {'pickups': []}
         };
       }
@@ -210,33 +216,48 @@ class PickupService {
     required String restaurantId,
   }) async {
     try {
-      // Create body map
+      // Validate the status
+      if (!['Accepted', 'Rejected', 'Completed'].contains(status)) {
+        return {
+          'success': false,
+          'message': 'Invalid status. Must be Accepted, Rejected, or Completed',
+        };
+      }
+      
+      // Create body map with exactly what the backend expects
       final Map<String, String> requestBody = {
         'pickup_id': pickupId,
         'status': status,
         'restaurant_id': restaurantId,
       };
       
-      print('Update pickup status request body: $requestBody');
+      print('Restaurant update pickup status request body: $requestBody');
       
-      // Add proper headers for form data
+      // Use the restaurant-specific endpoint
       final response = await http.post(
         Uri.parse('$baseUrl$updateRestaurantPickupEndpoint'),
         body: requestBody,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
       );
       
-      print('Update pickup status code: ${response.statusCode}');
-      print('Update pickup status response: ${response.body}');
+      print('Restaurant update pickup status code: ${response.statusCode}');
+      print('Restaurant update pickup status response: ${response.body}');
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final jsonResponse = json.decode(response.body);
+        
+        // Add a small delay to ensure the database has time to update
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        return {
+          'success': jsonResponse['success'] == true,
+          'message': jsonResponse['message'],
+          'data': jsonResponse['data'],
+        };
       } else {
+        print('Failed to update pickup status: ${response.statusCode}');
         return {
           'success': false,
-          'message': 'Failed to update pickup status. Status code: ${response.statusCode}',
+          'message': 'Failed to update pickup status. Server returned ${response.statusCode}: ${response.body}',
         };
       }
     } catch (e) {

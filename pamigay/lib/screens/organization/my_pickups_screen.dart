@@ -37,10 +37,12 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
   final DonationService _donationService = DonationService();
   
   // Pickup data
-  List<Map<String, dynamic>> _pendingPickups = [];
-  List<Map<String, dynamic>> _completedPickups = [];
-  List<Map<String, dynamic>> _filteredPendingPickups = [];
-  List<Map<String, dynamic>> _filteredCompletedPickups = [];
+  List<Map<String, dynamic>> _requestedPickups = [];
+  List<Map<String, dynamic>> _activePickups = [];
+  List<Map<String, dynamic>> _historyPickups = [];
+  List<Map<String, dynamic>> _filteredRequestedPickups = [];
+  List<Map<String, dynamic>> _filteredActivePickups = [];
+  List<Map<String, dynamic>> _filteredHistoryPickups = [];
   
   // Search and filter
   final TextEditingController _searchController = TextEditingController();
@@ -59,7 +61,8 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // Create a new TabController with length 3 to match the 3 tabs
+    _tabController = TabController(length: 3, vsync: this);
     _fetchPickups();
     
     // Listen for tab changes to apply filters correctly
@@ -72,6 +75,7 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
   
   @override
   void dispose() {
+    // Properly dispose of the TabController
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -100,68 +104,75 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
       // Enhance pickup data with donation details
       final enhancedPickups = await _enhancePickupsWithDonationDetails(allPickups);
       
-      // Separate into pending and completed
-      final pending = <Map<String, dynamic>>[];
-      final completed = <Map<String, dynamic>>[];
+      // Separate into requested, active, and history
+      final requested = <Map<String, dynamic>>[];
+      final active = <Map<String, dynamic>>[];
+      final history = <Map<String, dynamic>>[];
       
       for (final pickup in enhancedPickups) {
         final status = pickup['status'] as String? ?? '';
-        if (status == 'Completed' || status == 'Cancelled' || status == 'Rejected') {
-          completed.add(pickup);
-        } else {
-          pending.add(pickup);
+        
+        // Categorize based on status
+        if (status == 'Requested') {
+          // Check if the donation is still available
+          final donationStatus = pickup['donation_status'] as String? ?? '';
+          
+          // Only add to requested if the donation is still available
+          if (donationStatus != 'Cancelled' && donationStatus != 'Completed') {
+            requested.add(pickup);
+          } else {
+            // If donation is no longer available, treat as cancelled
+            pickup['status'] = 'Cancelled';
+            history.add(pickup);
+          }
+        } else if (status == 'Accepted') {
+          active.add(pickup);
+        } else if (status == 'Completed' || status == 'Cancelled') {
+          history.add(pickup);
         }
       }
       
-      // Sort by pickup time (most recent first for pending)
-      pending.sort((a, b) {
-        try {
-          final aTime = DateTime.parse(a['pickup_time'] ?? '');
-          final bTime = DateTime.parse(b['pickup_time'] ?? '');
-          return aTime.compareTo(bTime);
-        } catch (e) {
-          return 0;
-        }
+      // Sort by date (newest first)
+      requested.sort((a, b) {
+        final aDate = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
+        return bDate.compareTo(aDate);
       });
       
-      // Sort by pickup time (most recent first for completed)
-      completed.sort((a, b) {
-        try {
-          final aTime = DateTime.parse(a['pickup_time'] ?? '');
-          final bTime = DateTime.parse(b['pickup_time'] ?? '');
-          return bTime.compareTo(aTime); // Reverse order for completed
-        } catch (e) {
-          return 0;
-        }
+      active.sort((a, b) {
+        final aDate = DateTime.tryParse(a['pickup_time'] ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b['pickup_time'] ?? '') ?? DateTime.now();
+        return aDate.compareTo(bDate); // Sort by pickup time (soonest first)
+      });
+      
+      history.sort((a, b) {
+        final aDate = DateTime.tryParse(a['updated_at'] ?? a['created_at'] ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b['updated_at'] ?? b['created_at'] ?? '') ?? DateTime.now();
+        return bDate.compareTo(aDate);
       });
       
       setState(() {
-        _pendingPickups = pending;
-        _completedPickups = completed;
-        _filteredPendingPickups = List.from(_pendingPickups);
-        _filteredCompletedPickups = List.from(_completedPickups);
+        _requestedPickups = requested;
+        _activePickups = active;
+        _historyPickups = history;
+        
+        // Initialize filtered lists
+        _filteredRequestedPickups = List.from(requested);
+        _filteredActivePickups = List.from(active);
+        _filteredHistoryPickups = List.from(history);
+        
         _isLoading = false;
         _isRefreshing = false;
+        
+        // Apply filters to update the filtered lists
+        _applyFilters();
       });
-      
-      // Apply any existing filters
-      _applyFilters();
     } catch (e) {
       print('Error fetching pickups: $e');
       setState(() {
         _isLoading = false;
         _isRefreshing = false;
       });
-      
-      // Show error message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load pickups: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
   
@@ -234,252 +245,339 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
   }
   
   void _applyFilters() {
-    if (!mounted) return;
+    // Get current tab
+    final currentTab = _tabController.index;
     
-    setState(() {
-      // Filter pending pickups
-      _filteredPendingPickups = _pendingPickups.where((pickup) {
-        // Filter by search query
-        bool matchesSearch = true;
-        if (_searchQuery.isNotEmpty) {
-          final searchLower = _searchQuery.toLowerCase();
-          final donationName = (pickup['donation_name'] ?? '').toString().toLowerCase();
-          final restaurantName = (pickup['restaurant_name'] ?? '').toString().toLowerCase();
-          final pickupId = (pickup['id'] ?? '').toString().toLowerCase();
-          
-          matchesSearch = donationName.contains(searchLower) || 
-                          restaurantName.contains(searchLower) ||
-                          pickupId.contains(searchLower);
-        }
+    // Apply search query filter
+    List<Map<String, dynamic>> filteredRequested = List.from(_requestedPickups);
+    List<Map<String, dynamic>> filteredActive = List.from(_activePickups);
+    List<Map<String, dynamic>> filteredHistory = List.from(_historyPickups);
+    
+    // Apply search query filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      
+      filteredRequested = filteredRequested.where((pickup) {
+        final donationName = (pickup['donation_name'] ?? '').toString().toLowerCase();
+        final restaurantName = (pickup['restaurant_name'] ?? '').toString().toLowerCase();
+        final notes = (pickup['notes'] ?? '').toString().toLowerCase();
         
-        // Filter by status
-        bool matchesStatus = true;
-        if (_selectedStatus != 'All') {
-          matchesStatus = (pickup['status'] ?? '') == _selectedStatus;
-        }
-        
-        // Filter by date
-        bool matchesDate = true;
-        if (_selectedDate != null) {
-          try {
-            final pickupTime = DateTime.parse(pickup['pickup_time'] ?? '');
-            final selectedDate = _selectedDate!;
-            
-            matchesDate = pickupTime.year == selectedDate.year &&
-                          pickupTime.month == selectedDate.month &&
-                          pickupTime.day == selectedDate.day;
-          } catch (e) {
-            matchesDate = false;
-          }
-        }
-        
-        return matchesSearch && matchesStatus && matchesDate;
+        return donationName.contains(query) || 
+               restaurantName.contains(query) || 
+               notes.contains(query);
       }).toList();
       
-      // Filter completed pickups
-      _filteredCompletedPickups = _completedPickups.where((pickup) {
-        // Filter by search query
-        bool matchesSearch = true;
-        if (_searchQuery.isNotEmpty) {
-          final searchLower = _searchQuery.toLowerCase();
-          final donationName = (pickup['donation_name'] ?? '').toString().toLowerCase();
-          final restaurantName = (pickup['restaurant_name'] ?? '').toString().toLowerCase();
-          final pickupId = (pickup['id'] ?? '').toString().toLowerCase();
-          
-          matchesSearch = donationName.contains(searchLower) || 
-                          restaurantName.contains(searchLower) ||
-                          pickupId.contains(searchLower);
-        }
+      filteredActive = filteredActive.where((pickup) {
+        final donationName = (pickup['donation_name'] ?? '').toString().toLowerCase();
+        final restaurantName = (pickup['restaurant_name'] ?? '').toString().toLowerCase();
+        final notes = (pickup['notes'] ?? '').toString().toLowerCase();
         
-        // Filter by status
-        bool matchesStatus = true;
-        if (_selectedStatus != 'All') {
-          matchesStatus = (pickup['status'] ?? '') == _selectedStatus;
-        }
-        
-        // Filter by date
-        bool matchesDate = true;
-        if (_selectedDate != null) {
-          try {
-            final pickupTime = DateTime.parse(pickup['pickup_time'] ?? '');
-            final selectedDate = _selectedDate!;
-            
-            matchesDate = pickupTime.year == selectedDate.year &&
-                          pickupTime.month == selectedDate.month &&
-                          pickupTime.day == selectedDate.day;
-          } catch (e) {
-            matchesDate = false;
-          }
-        }
-        
-        return matchesSearch && matchesStatus && matchesDate;
+        return donationName.contains(query) || 
+               restaurantName.contains(query) || 
+               notes.contains(query);
       }).toList();
+      
+      filteredHistory = filteredHistory.where((pickup) {
+        final donationName = (pickup['donation_name'] ?? '').toString().toLowerCase();
+        final restaurantName = (pickup['restaurant_name'] ?? '').toString().toLowerCase();
+        final notes = (pickup['notes'] ?? '').toString().toLowerCase();
+        
+        return donationName.contains(query) || 
+               restaurantName.contains(query) || 
+               notes.contains(query);
+      }).toList();
+    }
+    
+    // Apply status filter
+    if (_selectedStatus != 'All') {
+      // For the Requested tab, we only show Requested status
+      // For the Active tab, we only show Accepted status
+      // For the History tab, we can filter by Completed or Cancelled
+      if (currentTab == 2) { // History tab
+        filteredHistory = filteredHistory.where((pickup) {
+          return pickup['status'] == _selectedStatus;
+        }).toList();
+      }
+    }
+    
+    // Apply date filter
+    if (_selectedDate != null) {
+      final selectedDateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+      
+      filteredRequested = filteredRequested.where((pickup) {
+        final pickupDate = pickup['created_at'] != null 
+            ? DateTime.tryParse(pickup['created_at'])
+            : null;
+        
+        if (pickupDate != null) {
+          final pickupDateStr = DateFormat('yyyy-MM-dd').format(pickupDate);
+          return pickupDateStr == selectedDateStr;
+        }
+        return false;
+      }).toList();
+      
+      filteredActive = filteredActive.where((pickup) {
+        final pickupDate = pickup['pickup_time'] != null 
+            ? DateTime.tryParse(pickup['pickup_time'])
+            : null;
+        
+        if (pickupDate != null) {
+          final pickupDateStr = DateFormat('yyyy-MM-dd').format(pickupDate);
+          return pickupDateStr == selectedDateStr;
+        }
+        return false;
+      }).toList();
+      
+      filteredHistory = filteredHistory.where((pickup) {
+        final pickupDate = pickup['updated_at'] != null 
+            ? DateTime.tryParse(pickup['updated_at'])
+            : pickup['created_at'] != null
+                ? DateTime.tryParse(pickup['created_at'])
+                : null;
+        
+        if (pickupDate != null) {
+          final pickupDateStr = DateFormat('yyyy-MM-dd').format(pickupDate);
+          return pickupDateStr == selectedDateStr;
+        }
+        return false;
+      }).toList();
+    }
+    
+    setState(() {
+      _filteredRequestedPickups = filteredRequested;
+      _filteredActivePickups = filteredActive;
+      _filteredHistoryPickups = filteredHistory;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool hasActiveFilters = _searchQuery.isNotEmpty || 
-                               _selectedStatus != 'All' || 
-                               _selectedDate != null;
-    
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'My Pickups',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+          titleSpacing: 16.0,
+          toolbarHeight: 48.0,
+          title: const Text(
+            'My Pickups',
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        actions: [
-          // Notification badge
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: NotificationBadge(
-              count: 0,
-              onTap: () {
+          actions: [
+            IconButton(
+              icon: NotificationBadge(
+                count: 0,
+                onTap: () {},
+                showZeroBadge: false,
+              ),
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => NotificationsScreen(userData: widget.userData),
+                    builder: (context) => NotificationsScreen(
+                      userData: widget.userData,
+                    ),
                   ),
                 );
               },
-              iconSize: 24,
+              color: Colors.black,
             ),
-          ),
-          // Refresh button
-          IconButton(
-            icon: Icon(
-              Icons.refresh,
-              color: Colors.grey[600],
-              size: 24,
-            ),
-            tooltip: 'Refresh pickups',
-            onPressed: _fetchPickups,
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: PamigayColors.primary,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: PamigayColors.primary,
-          indicatorWeight: 3,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Pending'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: PamigayColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_filteredPendingPickups.length}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: PamigayColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.grey.shade200,
+                    width: 1.0,
                   ),
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: PamigayColors.primary,
+                labelColor: PamigayColors.primary,
+                unselectedLabelColor: Colors.grey[600],
+                indicatorWeight: 3.0,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 14,
+                ),
+                labelPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                tabs: [
+                  _buildTabLabel('Requested', _requestedPickups.length),
+                  _buildTabLabel('Active', _activePickups.length),
+                  _buildTabLabel('History', _historyPickups.length),
                 ],
               ),
             ),
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          ),
+        ),
+        body: Column(
+          children: [
+            // Search and filter bar
+            SearchFilterBar(
+              searchController: _searchController,
+              onSearchChanged: _onSearchChanged,
+              onStatusChanged: _onStatusChanged,
+              onDateChanged: _onDateChanged,
+              onClearFilters: _clearFilters,
+              statusOptions: _tabController.index == 2 
+                  ? _statusOptions.where((s) => s == 'All' || s == 'Completed' || s == 'Cancelled').toList()
+                  : ['All'],
+              selectedStatus: _selectedStatus,
+              selectedDate: _selectedDate,
+              filteredCount: _getCurrentFilteredCount(),
+              totalCount: _getCurrentTotalCount(),
+            ),
+            
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
                 children: [
-                  const Text('History'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_filteredCompletedPickups.length}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  // Requested pickups tab
+                  _isLoading
+                      ? ShimmerLoader(
+                          itemCount: 3,
+                          itemHeight: 160,
+                          padding: const EdgeInsets.all(16),
+                        )
+                      : _requestedPickups.isEmpty
+                          ? _buildEmptyState(
+                              'No Requested Pickups',
+                              'You don\'t have any pending pickup requests.',
+                              false,
+                            )
+                          : _filteredRequestedPickups.isEmpty
+                              ? _buildEmptyState(
+                                  'No Results Found',
+                                  'No pickups match your filters.',
+                                  true,
+                                )
+                              : _buildPickupsList(_filteredRequestedPickups, isPending: true),
+                  
+                  // Active pickups tab
+                  _isLoading
+                      ? ShimmerLoader(
+                          itemCount: 3,
+                          itemHeight: 160,
+                          padding: const EdgeInsets.all(16),
+                        )
+                      : _activePickups.isEmpty
+                          ? _buildEmptyState(
+                              'No Active Pickups',
+                              'You don\'t have any accepted pickup requests.',
+                              false,
+                            )
+                          : _filteredActivePickups.isEmpty
+                              ? _buildEmptyState(
+                                  'No Results Found',
+                                  'No pickups match your filters.',
+                                  true,
+                                )
+                              : _buildPickupsList(_filteredActivePickups, isPending: true),
+                  
+                  // History pickups tab
+                  _isLoading
+                      ? ShimmerLoader(
+                          itemCount: 3,
+                          itemHeight: 160,
+                          padding: const EdgeInsets.all(16),
+                        )
+                      : _historyPickups.isEmpty
+                          ? _buildEmptyState(
+                              'No Pickup History',
+                              'Your completed and cancelled pickups will appear here.',
+                              false,
+                            )
+                          : _filteredHistoryPickups.isEmpty
+                              ? _buildEmptyState(
+                                  'No Results Found',
+                                  'No pickups match your filters.',
+                                  true,
+                                )
+                              : _buildPickupsList(_filteredHistoryPickups, isPending: false),
                 ],
               ),
             ),
           ],
         ),
       ),
-      body: Column(
+    );
+  }
+  
+  // Helper method to build tab labels with count badges
+  Widget _buildTabLabel(String title, int count) {
+    final color = title == 'Requested' 
+        ? PamigayColors.primary 
+        : Colors.grey[700]!;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Compact search bar (collapsible by default)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: SearchFilterBar(
-              searchController: _searchController,
-              onSearchChanged: _onSearchChanged,
-              onStatusChanged: _onStatusChanged,
-              onDateChanged: _onDateChanged,
-              statusOptions: _statusOptions,
-              selectedStatus: _selectedStatus,
-              selectedDate: _selectedDate,
-              onClearFilters: _clearFilters,
-              filteredCount: _tabController.index == 0 
-                ? _filteredPendingPickups.length 
-                : _filteredCompletedPickups.length,
-              totalCount: _tabController.index == 0 
-                ? _pendingPickups.length 
-                : _completedPickups.length,
-              initiallyExpanded: false, // Keep filters collapsed by default
+          Text(title),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ),
-          
-          // Tab content
-          Expanded(
-            child: _isLoading
-              ? const ShimmerLoader(itemCount: 3, itemHeight: 150)
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // Pending pickups tab
-                    _filteredPendingPickups.isEmpty
-                      ? _buildEmptyState(
-                          hasActiveFilters ? 'No Pickups Match Your Filters' : 'No Pending Pickups',
-                          hasActiveFilters 
-                            ? 'Try adjusting your search or filters to find what you\'re looking for'
-                            : 'You don\'t have any scheduled or pending pickup requests',
-                          hasActiveFilters,
-                        )
-                      : _buildPickupsList(_filteredPendingPickups, isPending: true),
-                    
-                    // Completed pickups tab
-                    _filteredCompletedPickups.isEmpty
-                      ? _buildEmptyState(
-                          hasActiveFilters ? 'No Pickups Match Your Filters' : 'No Pickup History',
-                          hasActiveFilters 
-                            ? 'Try adjusting your search or filters to find what you\'re looking for'
-                            : 'Your completed and cancelled pickups will appear here',
-                          hasActiveFilters,
-                        )
-                      : _buildPickupsList(_filteredCompletedPickups, isPending: false),
-                  ],
-                ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+  
+  // Helper methods to get current filtered and total counts based on tab
+  int _getCurrentFilteredCount() {
+    switch (_tabController.index) {
+      case 0:
+        return _filteredRequestedPickups.length;
+      case 1:
+        return _filteredActivePickups.length;
+      case 2:
+        return _filteredHistoryPickups.length;
+      default:
+        return 0;
+    }
+  }
+  
+  int _getCurrentTotalCount() {
+    switch (_tabController.index) {
+      case 0:
+        return _requestedPickups.length;
+      case 1:
+        return _activePickups.length;
+      case 2:
+        return _historyPickups.length;
+      default:
+        return 0;
+    }
   }
   
   Widget _buildEmptyState(String title, String subtitle, [bool hasFilters = false]) {
@@ -567,7 +665,7 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
             child: PickupCard(
               pickup: pickups[index],
               isPending: isPending,
-              onCancel: _cancelPickup,
+              onCancel: isPending ? _cancelPickup : null,
               onViewDetails: () {
                 _viewDonationDetails(pickups[index]);
               },
@@ -654,7 +752,6 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
       final result = await _pickupService.updatePickup(
         pickupId: pickupId,
         status: 'Cancelled',
-        collectorId: organizationId,
       );
       
       if (result['success']) {

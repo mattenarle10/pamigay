@@ -107,8 +107,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await Future.delayed(const Duration(milliseconds: 500));
       
       setState(() {
-        // Placeholder notification count
-        _notificationCount = _userRole == 'Restaurant' ? 2 : 1;
+        // Set notification count to 0 to remove the badge
+        _notificationCount = 0;
       });
     } catch (e) {
       print('Error loading notification count: $e');
@@ -149,7 +149,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
         userRole: _userRole,
-        notificationCount: _notificationCount,
+        notificationCount: 0, // Always set to 0 to remove notification badge
         onTap: _handleNavigation,
       ),
     );

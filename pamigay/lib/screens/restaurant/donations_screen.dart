@@ -349,15 +349,27 @@ class _DonationsScreenState extends State<DonationsScreen> {
                               child: DonationCard(
                                 donation: donation,
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
+                                  // Use a safer navigation approach with named routes
+                                  Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (context) => DonationDetailScreen(
                                         userData: widget.userData,
                                         donation: donation,
+                                        onDonationDeleted: () {
+                                          // This callback ensures we properly handle deletion
+                                          // from the detail screen
+                                          _fetchDonations();
+                                        },
                                       ),
                                     ),
-                                  ).then((_) => _fetchDonations());
+                                  ).then((_) {
+                                    // Refresh donations when returning from detail screen
+                                    _fetchDonations();
+                                  }).catchError((error) {
+                                    // Handle any navigation errors
+                                    print('Navigation error: $error');
+                                    _fetchDonations();
+                                  });
                                 },
                                 userRole: widget.userData?['role'],
                                 userId: widget.userData?['id'],

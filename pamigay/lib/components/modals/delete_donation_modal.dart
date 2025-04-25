@@ -36,6 +36,8 @@ class DeleteDonationModal extends StatefulWidget {
   }) {
     return showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54, // Ensure proper barrier color
       builder: (context) => DeleteDonationModal(
         userData: userData,
         donation: donation,
@@ -70,17 +72,24 @@ class _DeleteDonationModalState extends State<DeleteDonationModal> {
       final result = await _donationService.deleteDonation(userId, donationId);
       
       if (result['success']) {
+        // First close the modal
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+        
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['message'] ?? 'Donation deleted successfully')),
         );
         
-        // Close modal and refresh list
-        Navigator.pop(context);
-        widget.onSuccess();
-        // Call the onDelete callback if provided for backward compatibility
-        if (widget.onDelete != null) {
-          widget.onDelete!();
-        }
+        // Call the success callback after a short delay to ensure the modal is closed
+        Future.delayed(const Duration(milliseconds: 300), () {
+          widget.onSuccess();
+          // Call the onDelete callback if provided for backward compatibility
+          if (widget.onDelete != null) {
+            widget.onDelete!();
+          }
+        });
       } else {
         _showErrorSnackBar(result['message'] ?? 'Failed to delete donation');
       }

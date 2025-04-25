@@ -58,6 +58,7 @@ class ShimmerLoader extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // Ensure column takes minimum space
         children: [
           // Header
           Container(
@@ -77,7 +78,7 @@ class ShimmerLoader extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min, // Ensure column takes minimum space
                 children: [
                   // Title and subtitle
                   Container(
@@ -98,14 +99,14 @@ class ShimmerLoader extends StatelessWidget {
                     ),
                   ),
                   
-                  const Spacer(),
+                  const SizedBox(height: 8), // Use fixed height instead of Spacer
                   
                   // Footer buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Container(
-                        height: 28,
+                        height: 24, // Reduced height
                         width: 70,
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
@@ -114,7 +115,7 @@ class ShimmerLoader extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        height: 28,
+                        height: 24, // Reduced height
                         width: 90,
                         decoration: BoxDecoration(
                           color: PamigayColors.primary.withOpacity(0.2),

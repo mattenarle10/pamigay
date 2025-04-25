@@ -17,11 +17,14 @@ import 'package:pamigay/widgets/detail_item.dart';
 class DonationDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
   final Map<String, dynamic> donation;
+  /// Callback function when a donation is deleted
+  final Function()? onDonationDeleted;
 
   const DonationDetailScreen({
     Key? key,
     required this.userData,
     required this.donation,
+    this.onDonationDeleted,
   }) : super(key: key);
 
   @override
@@ -242,25 +245,23 @@ class _DonationDetailScreenState extends State<DonationDetailScreen> {
     );
   }
 
-  void _showDeleteModal() {
-    showModalBottomSheet(
+  Future<void> _showDeleteModal() async {
+    // Use the DeleteDonationModal component
+    await DeleteDonationModal.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: DeleteDonationModal(
-          donation: _donation,
-          userData: widget.userData,
-          onSuccess: () {
-            Navigator.pop(context);
-            Navigator.pop(context, true); // Pop with true to indicate deletion
-          },
-        ),
-      ),
+      userData: widget.userData!,
+      donation: _donation,
+      onSuccess: () {
+        // Call the onDonationDeleted callback if provided
+        if (widget.onDonationDeleted != null) {
+          widget.onDonationDeleted!();
+        }
+        
+        // Safely pop back to the previous screen
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+      },
     );
   }
 
@@ -802,7 +803,6 @@ class _DonationDetailScreenState extends State<DonationDetailScreen> {
                                             final result = await _pickupService.updatePickup(
                                               pickupId: _existingPickup!['id'].toString(),
                                               status: 'Cancelled',
-                                              collectorId: organizationId,
                                             );
                                             
                                             if (result['success']) {

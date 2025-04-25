@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:pamigay/utils/constants.dart';
 import 'package:pamigay/services/pickup_service.dart';
 import 'package:pamigay/services/donation_service.dart';
+import 'package:pamigay/services/user_service.dart';
 import 'package:intl/intl.dart';
 import 'package:pamigay/components/loaders/shimmer_loader.dart';
+import 'package:pamigay/components/cards/restaurant_pickup_request_card.dart';
+import 'package:pamigay/components/cards/restaurant_accepted_pickup_card.dart';
+import 'package:pamigay/components/search/search_filter_bar.dart';
 
 /// Screen for restaurants to manage pickup requests for their donations.
 ///
-/// This screen allows restaurants to view, accept, reject, and mark as completed
-/// the pickup requests from organizations.
+/// This screen allows restaurants to view and manage pickup requests from
+/// organizations. They can accept, reject, or mark pickups as completed.
 class PickupRequestsScreen extends StatefulWidget {
+  /// The user data for the restaurant
   final Map<String, dynamic>? userData;
-  
+
   const PickupRequestsScreen({
     Key? key,
     required this.userData,
@@ -21,30 +26,50 @@ class PickupRequestsScreen extends StatefulWidget {
   State<PickupRequestsScreen> createState() => _PickupRequestsScreenState();
 }
 
-class _PickupRequestsScreenState extends State<PickupRequestsScreen> with SingleTickerProviderStateMixin {
+class _PickupRequestsScreenState extends State<PickupRequestsScreen>
+    with SingleTickerProviderStateMixin {
+  // Services
+  final _pickupService = PickupService();
+  final _donationService = DonationService();
+  final _userService = UserService();
+
+  // Tab controller
   late TabController _tabController;
-  final PickupService _pickupService = PickupService();
-  final DonationService _donationService = DonationService();
+
+  // State variables
   bool _isLoading = true;
-  
-  // Group pickups by donation for better organization
   Map<String, List<Map<String, dynamic>>> _pendingPickupsByDonation = {};
   List<Map<String, dynamic>> _acceptedPickups = [];
   List<Map<String, dynamic>> _completedPickups = [];
   
+  // Original data (unfiltered)
+  Map<String, List<Map<String, dynamic>>> _allPendingPickupsByDonation = {};
+  List<Map<String, dynamic>> _allAcceptedPickups = [];
+  List<Map<String, dynamic>> _allCompletedPickups = [];
+  
+  // Search and filter
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedStatus = 'All';
+  DateTime? _selectedDate;
+  final List<String> _statusOptions = ['All', 'Today', 'This Week', 'This Month'];
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _fetchPickupRequests();
+    
+    // Add listener to search controller
+    _searchController.addListener(_filterPickups);
   }
-  
+
   @override
   void dispose() {
+    _searchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _fetchPickupRequests() async {
     if (widget.userData == null) return;
     
@@ -53,186 +78,270 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> with Single
     });
     
     try {
-      final restaurantId = widget.userData!['id'].toString();
+      final restaurantId = widget.userData!['id'];
       
-      // In a real implementation, we would fetch pickup requests from the API
-      // For now, we'll use placeholder data
+      // Call the API to get pickup requests for this restaurant
+      final response = await _pickupService.getRestaurantPickupRequests(restaurantId);
       
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Reset data
-      _pendingPickupsByDonation = {};
-      _acceptedPickups = [];
-      _completedPickups = [];
-      
-      // Placeholder data for pending pickups
-      final pendingPickups = [
-        {
-          'id': '1',
-          'donation_id': '101',
-          'donation_name': 'Fresh Vegetables Bundle',
-          'organization_id': '201',
-          'organization_name': 'Food Bank Organization',
-          'pickup_time': DateTime.now().add(const Duration(days: 1)).toString(),
-          'status': 'Requested',
-          'notes': 'Please keep refrigerated',
-          'created_at': DateTime.now().subtract(const Duration(hours: 2)).toString(),
-        },
-        {
-          'id': '2',
-          'donation_id': '101', // Same donation as above
-          'donation_name': 'Fresh Vegetables Bundle',
-          'organization_id': '202',
-          'organization_name': 'Community Shelter',
-          'pickup_time': DateTime.now().add(const Duration(days: 2)).toString(),
-          'status': 'Requested',
-          'notes': 'We can pick up anytime',
-          'created_at': DateTime.now().subtract(const Duration(hours: 5)).toString(),
-        },
-        {
-          'id': '3',
-          'donation_id': '102',
-          'donation_name': 'Bread and Pastries',
-          'organization_id': '203',
-          'organization_name': 'Local Charity',
-          'pickup_time': DateTime.now().add(const Duration(hours: 4)).toString(),
-          'status': 'Requested',
-          'notes': '',
-          'created_at': DateTime.now().subtract(const Duration(days: 1)).toString(),
-        },
-      ];
-      
-      // Group pending pickups by donation
-      for (final pickup in pendingPickups) {
-        final donationId = pickup['donation_id'].toString();
-        if (!_pendingPickupsByDonation.containsKey(donationId)) {
-          _pendingPickupsByDonation[donationId] = [];
+      if (response['success'] == true) {
+        final List<dynamic> pickupsData = response['data']['pickups'] ?? [];
+        
+        // Reset collections
+        _allPendingPickupsByDonation = {};
+        _allAcceptedPickups = [];
+        _allCompletedPickups = [];
+        
+        // Process the pickups
+        for (var pickup in pickupsData) {
+          final Map<String, dynamic> pickupMap = Map<String, dynamic>.from(pickup);
+          
+          switch (pickupMap['status']) {
+            case 'Requested':
+              final donationId = pickupMap['donation_id'].toString();
+              if (!_allPendingPickupsByDonation.containsKey(donationId)) {
+                _allPendingPickupsByDonation[donationId] = [];
+              }
+              _allPendingPickupsByDonation[donationId]!.add(pickupMap);
+              break;
+            case 'Accepted':
+              _allAcceptedPickups.add(pickupMap);
+              break;
+            case 'Completed':
+              _allCompletedPickups.add(pickupMap);
+              break;
+            default:
+              // Skip other statuses like 'Cancelled'
+              break;
+          }
         }
-        _pendingPickupsByDonation[donationId]!.add(pickup);
+        
+        // Apply initial filtering
+        _filterPickups();
+        
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
+        throw Exception(response['message'] ?? 'Failed to load pickup requests');
       }
-      
-      // Placeholder data for accepted pickups
-      _acceptedPickups = [
-        {
-          'id': '4',
-          'donation_id': '103',
-          'donation_name': 'Canned Goods',
-          'organization_id': '204',
-          'organization_name': 'Homeless Shelter',
-          'pickup_time': DateTime.now().add(const Duration(hours: 5)).toString(),
-          'status': 'Accepted',
-          'notes': 'Will arrive around 2pm',
-          'created_at': DateTime.now().subtract(const Duration(days: 1)).toString(),
-        },
-      ];
-      
-      // Placeholder data for completed pickups
-      _completedPickups = [
-        {
-          'id': '5',
-          'donation_id': '104',
-          'donation_name': 'Packaged Meals',
-          'organization_id': '205',
-          'organization_name': 'Food Not Bombs',
-          'pickup_time': DateTime.now().subtract(const Duration(days: 1)).toString(),
-          'status': 'Completed',
-          'notes': '',
-          'created_at': DateTime.now().subtract(const Duration(days: 2)).toString(),
-          'completed_at': DateTime.now().subtract(const Duration(days: 1)).toString(),
-        },
-        {
-          'id': '6',
-          'donation_id': '105',
-          'donation_name': 'Fruits and Vegetables',
-          'organization_id': '206',
-          'organization_name': 'Community Kitchen',
-          'pickup_time': DateTime.now().subtract(const Duration(days: 3)).toString(),
-          'status': 'Completed',
-          'notes': '',
-          'created_at': DateTime.now().subtract(const Duration(days: 4)).toString(),
-          'completed_at': DateTime.now().subtract(const Duration(days: 3)).toString(),
-        },
-      ];
-      
-      setState(() {
-        _isLoading = false;
-      });
     } catch (e) {
       print('Error fetching pickup requests: $e');
+      
+      // For demo purposes, populate with sample data if API fails
+      // In production, you would show an error message instead
+      _allPendingPickupsByDonation = {};
+      _allAcceptedPickups = [];
+      _allCompletedPickups = [];
+      
+      // Apply initial filtering
+      _filterPickups();
+      
       setState(() {
         _isLoading = false;
       });
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading pickup requests: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
   
-  Future<void> _handleAcceptPickup(String pickupId, String donationId) async {
-    // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Accept Pickup Request'),
-        content: const Text('Are you sure you want to accept this pickup request? Other requests for this donation will be automatically rejected.'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: PamigayColors.primary,
-            ),
-            child: const Text('Accept'),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
+  /// Filter pickups based on search query, status, and date
+  void _filterPickups() {
+    final String searchQuery = _searchController.text.toLowerCase();
     
-    if (confirm != true) return;
-    
-    setState(() {
-      _isLoading = true;
+    // Filter pending pickups
+    _pendingPickupsByDonation = {};
+    _allPendingPickupsByDonation.forEach((donationId, pickups) {
+      final List<Map<String, dynamic>> filteredPickups = pickups.where((pickup) {
+        // Check if matches search query
+        final bool matchesSearch = searchQuery.isEmpty ||
+            (pickup['donation_name']?.toString().toLowerCase().contains(searchQuery) ?? false) ||
+            (pickup['organization_name']?.toString().toLowerCase().contains(searchQuery) ?? false);
+        
+        // Check if matches date filter
+        final bool matchesDate = _matchesDateFilter(pickup['pickup_time']);
+        
+        return matchesSearch && matchesDate;
+      }).toList();
+      
+      if (filteredPickups.isNotEmpty) {
+        _pendingPickupsByDonation[donationId] = filteredPickups;
+      }
     });
     
+    // Filter accepted pickups
+    _acceptedPickups = _allAcceptedPickups.where((pickup) {
+      // Check if matches search query
+      final bool matchesSearch = searchQuery.isEmpty ||
+          (pickup['donation_name']?.toString().toLowerCase().contains(searchQuery) ?? false) ||
+          (pickup['organization_name']?.toString().toLowerCase().contains(searchQuery) ?? false);
+      
+      // Check if matches date filter
+      final bool matchesDate = _matchesDateFilter(pickup['pickup_time']);
+      
+      return matchesSearch && matchesDate;
+    }).toList();
+    
+    // Filter completed pickups
+    _completedPickups = _allCompletedPickups.where((pickup) {
+      // Check if matches search query
+      final bool matchesSearch = searchQuery.isEmpty ||
+          (pickup['donation_name']?.toString().toLowerCase().contains(searchQuery) ?? false) ||
+          (pickup['organization_name']?.toString().toLowerCase().contains(searchQuery) ?? false);
+      
+      // Check if matches date filter
+      final bool matchesDate = _matchesDateFilter(pickup['pickup_time']);
+      
+      return matchesSearch && matchesDate;
+    }).toList();
+    
+    setState(() {});
+  }
+  
+  /// Check if a pickup date matches the selected date filter
+  bool _matchesDateFilter(dynamic pickupTimeStr) {
+    // If no filter is selected or specific date is selected
+    if (_selectedStatus == 'All' && _selectedDate == null) {
+      return true;
+    }
+    
     try {
-      // Call service to accept pickup
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      
-      // In a real implementation, we would update the status through the API
-      // and then refresh the data
-      
-      // For now, we'll just update our local state
-      // 1. Remove the pickup from pending and add to accepted
-      // 2. Remove all other pickups for the same donation
-      
-      final donationPickups = _pendingPickupsByDonation[donationId] ?? [];
-      final acceptedPickup = donationPickups.firstWhere(
-        (p) => p['id'] == pickupId,
-        orElse: () => <String, dynamic>{},
-      );
-      
-      if (acceptedPickup.isNotEmpty) {
-        acceptedPickup['status'] = 'Accepted';
-        _acceptedPickups.add(acceptedPickup);
-        _pendingPickupsByDonation.remove(donationId);
+      // Parse the pickup time
+      DateTime? pickupTime;
+      if (pickupTimeStr != null) {
+        pickupTime = DateTime.parse(pickupTimeStr.toString());
+      } else {
+        return false;
       }
       
+      // If a specific date is selected
+      if (_selectedDate != null) {
+        return DateUtils.isSameDay(pickupTime, _selectedDate);
+      }
+      
+      // Get current date at midnight
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      
+      switch (_selectedStatus) {
+        case 'Today':
+          return DateUtils.isSameDay(pickupTime, today);
+        case 'This Week':
+          // Calculate start of week (Sunday)
+          final startOfWeek = today.subtract(Duration(days: today.weekday % 7));
+          final endOfWeek = startOfWeek.add(const Duration(days: 7));
+          return pickupTime.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) && 
+                 pickupTime.isBefore(endOfWeek);
+        case 'This Month':
+          // Same month and year
+          return pickupTime.month == today.month && pickupTime.year == today.year;
+        default:
+          return true;
+      }
+    } catch (e) {
+      print('Error parsing date: $e');
+      return false;
+    }
+  }
+  
+  /// Clear all filters
+  void _clearFilters() {
+    setState(() {
+      _searchController.text = '';
+      _selectedStatus = 'All';
+      _selectedDate = null;
+    });
+    _filterPickups();
+  }
+
+  Future<void> _handleCompletePickup(String pickupId, String donationId) async {
+    try {
+      // Show loading indicator
       setState(() {
-        _isLoading = false;
+        _isLoading = true;
       });
       
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pickup request accepted successfully'),
-          backgroundColor: Colors.green,
-        ),
+      // Call the API to complete the pickup
+      final response = await _pickupService.updatePickupStatus(
+        pickupId: pickupId,
+        status: 'Completed',
+        restaurantId: widget.userData!['id'].toString(),
       );
+      
+      if (response['success'] == true) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pickup marked as completed'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Refresh the pickup requests
+        await _fetchPickupRequests();
+        
+        // Add a small delay to ensure the UI has time to update
+        await Future.delayed(const Duration(milliseconds: 300));
+        
+        // Switch to the completed tab (index 2)
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _tabController.animateTo(2); // Switch to the completed tab
+          });
+        }
+      } else {
+        throw Exception(response['message'] ?? 'Failed to complete pickup');
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      print('Error completing pickup: $e');
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error completing pickup: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleAcceptPickup(String pickupId, String donationId) async {
+    try {
+      // Call the API to accept the pickup
+      final response = await _pickupService.updatePickupStatus(
+        pickupId: pickupId,
+        status: 'Accepted',
+        restaurantId: widget.userData!['id'].toString(),
+      );
+      
+      if (response['success'] == true) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pickup request accepted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Refresh the pickup requests
+        _fetchPickupRequests();
+      } else {
+        throw Exception(response['message'] ?? 'Failed to accept pickup request');
+      }
+    } catch (e) {
+      print('Error accepting pickup request: $e');
       
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -243,70 +352,32 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> with Single
       );
     }
   }
-  
+
   Future<void> _handleRejectPickup(String pickupId, String donationId) async {
-    // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reject Pickup Request'),
-        content: const Text('Are you sure you want to reject this pickup request?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Reject'),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
-    
-    if (confirm != true) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
-    
     try {
-      // Call service to reject pickup
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      
-      // In a real implementation, we would update the status through the API
-      // and then refresh the data
-      
-      // For now, we'll just update our local state
-      // Remove the rejected pickup from the pending list
-      
-      final donationPickups = _pendingPickupsByDonation[donationId] ?? [];
-      final updatedPickups = donationPickups.where((p) => p['id'] != pickupId).toList();
-      
-      if (updatedPickups.isEmpty) {
-        _pendingPickupsByDonation.remove(donationId);
-      } else {
-        _pendingPickupsByDonation[donationId] = updatedPickups;
-      }
-      
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pickup request rejected successfully'),
-          backgroundColor: Colors.orange,
-        ),
+      // Call the API to reject the pickup
+      final response = await _pickupService.updatePickupStatus(
+        pickupId: pickupId,
+        status: 'Rejected',
+        restaurantId: widget.userData!['id'].toString(),
       );
+      
+      if (response['success'] == true) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pickup request rejected'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        
+        // Refresh the pickup requests
+        _fetchPickupRequests();
+      } else {
+        throw Exception(response['message'] ?? 'Failed to reject pickup request');
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      print('Error rejecting pickup request: $e');
       
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -317,182 +388,89 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> with Single
       );
     }
   }
-  
-  Future<void> _handleCompletePickup(String pickupId) async {
-    // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Complete Pickup'),
-        content: const Text('Mark this pickup as completed?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: PamigayColors.primary,
-            ),
-            child: const Text('Complete'),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
-    
-    if (confirm != true) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      // Call service to complete pickup
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      
-      // For now, we'll just update our local state
-      final pickupIndex = _acceptedPickups.indexWhere((p) => p['id'] == pickupId);
-      
-      if (pickupIndex != -1) {
-        final pickup = _acceptedPickups[pickupIndex];
-        pickup['status'] = 'Completed';
-        pickup['completed_at'] = DateTime.now().toString();
-        
-        _completedPickups.add(pickup);
-        _acceptedPickups.removeAt(pickupIndex);
-      }
-      
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pickup marked as completed'),
-          backgroundColor: Colors.green,
-        ),
+
+  Widget _buildPendingPickupsList() {
+    if (_pendingPickupsByDonation.isEmpty) {
+      return _buildEmptyState(
+        'No Matching Requests',
+        'No pickup requests match your search criteria',
       );
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
     }
-  }
-  
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Clean title with refresh button
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Pickup Requests',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.refresh,
-                      color: Colors.grey[600],
-                      size: 24,
-                    ),
-                    tooltip: 'Refresh pickup requests',
-                    onPressed: _fetchPickupRequests,
-                  ),
-                ],
-              ),
-            ),
-            
-            // Tab bar
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                labelColor: PamigayColors.primary,
-                unselectedLabelColor: Colors.grey[600],
-                indicatorColor: PamigayColors.primary,
-                indicatorWeight: 3,
-                tabs: [
-                  Tab(
-                    text: 'Pending (${_pendingPickupsByDonation.length})',
-                  ),
-                  Tab(
-                    text: 'Accepted (${_acceptedPickups.length})',
-                  ),
-                  Tab(
-                    text: 'Completed (${_completedPickups.length})',
-                  ),
-                ],
-              ),
-            ),
-            
-            // Tab content
-            Expanded(
-              child: _isLoading
-                ? const ShimmerLoader(itemCount: 3)
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Pending requests tab
-                      _pendingPickupsByDonation.isEmpty
-                          ? _buildEmptyState(
-                              'No Pending Requests',
-                              'You don\'t have any pending pickup requests',
-                            )
-                          : _buildPendingPickupsList(),
-                      
-                      // Accepted pickups tab
-                      _acceptedPickups.isEmpty
-                          ? _buildEmptyState(
-                              'No Accepted Pickups',
-                              'You haven\'t accepted any pickup requests yet',
-                            )
-                          : _buildPickupsList(_acceptedPickups, status: 'Accepted'),
-                      
-                      // Completed pickups tab
-                      _completedPickups.isEmpty
-                          ? _buildEmptyState(
-                              'No Completed Pickups',
-                              'Your completed pickups will appear here',
-                            )
-                          : _buildPickupsList(_completedPickups, status: 'Completed'),
-                    ],
-                  ),
-            ),
-          ],
-        ),
-      ),
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _pendingPickupsByDonation.length,
+      itemBuilder: (context, index) {
+        final donationId = _pendingPickupsByDonation.keys.elementAt(index);
+        final pickups = _pendingPickupsByDonation[donationId]!;
+        
+        // Get the first pickup to extract donation details
+        final firstPickup = pickups.first;
+        final donation = {
+          'donation_id': firstPickup['donation_id'],
+          'donation_name': firstPickup['donation_name'],
+          'quantity': firstPickup['quantity'],
+          'category': firstPickup['category'],
+          'photo_url': firstPickup['photo_url'],
+        };
+        
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: RestaurantPickupRequestCard(
+            donation: donation,
+            pickupRequests: pickups,
+            onAccept: _handleAcceptPickup,
+            onReject: _handleRejectPickup,
+          ),
+        );
+      },
     );
   }
-  
-  Widget _buildEmptyState(String title, String subtitle) {
+
+  Widget _buildPickupsList(List<Map<String, dynamic>> pickups, {required String status}) {
+    if (pickups.isEmpty) {
+      return _buildEmptyState(
+        'No Matching Pickups',
+        'No $status pickups match your search criteria',
+      );
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: pickups.length,
+      itemBuilder: (context, index) {
+        final pickup = pickups[index];
+        
+        // Extract donation details from the pickup
+        final donation = {
+          'donation_id': pickup['donation_id'],
+          'donation_name': pickup['donation_name'],
+          'quantity': pickup['quantity'],
+          'category': pickup['category'],
+          'photo_url': pickup['photo_url'],
+        };
+        
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: RestaurantAcceptedPickupCard(
+            donation: donation,
+            pickup: pickup,
+            onComplete: _handleCompletePickup,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(String title, String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.inbox,
+              Icons.inbox_outlined,
               size: 80,
               color: Colors.grey[400],
             ),
@@ -500,449 +478,156 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> with Single
             Text(
               title,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              subtitle,
+              message,
+              textAlign: TextAlign.center,
               style: TextStyle(
+                fontSize: 16,
                 color: Colors.grey[600],
               ),
-              textAlign: TextAlign.center,
             ),
+            if (title.contains('No Matching')) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _clearFilters,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: PamigayColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                icon: const Icon(Icons.filter_list_off, size: 18),
+                label: const Text('Clear Filters'),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
   
-  Widget _buildPendingPickupsList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _pendingPickupsByDonation.length,
-      itemBuilder: (context, index) {
-        final donationId = _pendingPickupsByDonation.keys.elementAt(index);
-        final pickups = _pendingPickupsByDonation[donationId]!;
-        return _buildDonationCard(pickups.first, pickups);
-      },
-    );
-  }
-  
-  Widget _buildDonationCard(Map<String, dynamic> donation, List<Map<String, dynamic>> pickups) {
-    final donationId = donation['donation_id'].toString();
-    final donationName = donation['donation_name'].toString();
+  @override
+  Widget build(BuildContext context) {
+    // Calculate filtered counts for each tab
+    final int pendingCount = _pendingPickupsByDonation.length;
+    final int pendingTotal = _allPendingPickupsByDonation.length;
     
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(12),
+    final int acceptedCount = _acceptedPickups.length;
+    final int acceptedTotal = _allAcceptedPickups.length;
+    
+    final int completedCount = _completedPickups.length;
+    final int completedTotal = _allCompletedPickups.length;
+    
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Pickup Requests',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.refresh,
+              color: Colors.grey[700],
+            ),
+            onPressed: _fetchPickupRequests,
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
             decoration: BoxDecoration(
-              color: PamigayColors.primary.withOpacity(0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey[300]!,
+                  width: 1,
+                ),
               ),
             ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.inventory_2,
-                  color: PamigayColors.primary,
-                  size: 20,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: PamigayColors.primary,
+              unselectedLabelColor: Colors.grey[600],
+              indicatorColor: PamigayColors.primary,
+              indicatorWeight: 3,
+              tabs: [
+                Tab(
+                  text: 'Pending ($pendingCount)',
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    donationName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: PamigayColors.primary,
-                    ),
-                  ),
+                Tab(
+                  text: 'Accepted ($acceptedCount)',
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    '${pickups.length} ${pickups.length == 1 ? 'Request' : 'Requests'}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
+                Tab(
+                  text: 'Completed ($completedCount)',
                 ),
               ],
             ),
           ),
-          
-          // Pickup requests
-          ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: pickups.length,
-            itemBuilder: (context, index) {
-              return _buildPickupRequestItem(pickups[index], donationId);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildPickupRequestItem(Map<String, dynamic> pickup, String donationId) {
-    final pickupId = pickup['id'].toString();
-    final organizationName = pickup['organization_name'].toString();
-    
-    // Format pickup time
-    final pickupTime = DateTime.parse(pickup['pickup_time']);
-    final now = DateTime.now();
-    final isToday = pickupTime.year == now.year && 
-                    pickupTime.month == now.month && 
-                    pickupTime.day == now.day;
-    final isTomorrow = pickupTime.year == now.year && 
-                       pickupTime.month == now.month && 
-                       pickupTime.day == now.day + 1;
-    
-    String pickupDateStr;
-    if (isToday) {
-      pickupDateStr = 'Today';
-    } else if (isTomorrow) {
-      pickupDateStr = 'Tomorrow';
-    } else {
-      pickupDateStr = DateFormat('MMM d').format(pickupTime);
-    }
-    
-    final pickupTimeStr = '$pickupDateStr at ${DateFormat('h:mm a').format(pickupTime)}';
-    
-    // Format created time
-    final createdAt = DateTime.parse(pickup['created_at']);
-    final timeAgo = DateTime.now().difference(createdAt);
-    
-    String timeAgoStr;
-    if (timeAgo.inMinutes < 60) {
-      timeAgoStr = '${timeAgo.inMinutes} minute${timeAgo.inMinutes == 1 ? '' : 's'} ago';
-    } else if (timeAgo.inHours < 24) {
-      timeAgoStr = '${timeAgo.inHours} hour${timeAgo.inHours == 1 ? '' : 's'} ago';
-    } else {
-      timeAgoStr = '${timeAgo.inDays} day${timeAgo.inDays == 1 ? '' : 's'} ago';
-    }
-    
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Colors.grey.shade200),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          // Organization and time
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                organizationName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                timeAgoStr,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          
-          // Pickup time
-          Row(
-            children: [
-              const Icon(Icons.event, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text(
-                'Pickup: $pickupTimeStr',
-                style: TextStyle(
-                  color: Colors.grey[700],
-                ),
-              ),
-            ],
+          // Search and filter bar
+          SearchFilterBar(
+            searchController: _searchController,
+            selectedStatus: _selectedStatus,
+            selectedDate: _selectedDate,
+            statusOptions: _statusOptions,
+            onSearchChanged: (value) => _filterPickups(),
+            onStatusChanged: (value) {
+              setState(() {
+                _selectedStatus = value;
+              });
+              _filterPickups();
+            },
+            onDateChanged: (value) {
+              setState(() {
+                _selectedDate = value;
+              });
+              _filterPickups();
+            },
+            onClearFilters: _clearFilters,
+            filteredCount: _tabController.index == 0
+                ? pendingCount
+                : _tabController.index == 1
+                    ? acceptedCount
+                    : completedCount,
+            totalCount: _tabController.index == 0
+                ? pendingTotal
+                : _tabController.index == 1
+                    ? acceptedTotal
+                    : completedTotal,
+            primaryColor: PamigayColors.primary,
           ),
           
-          // Notes if available
-          if (pickup['notes'] != null && pickup['notes'].toString().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.note, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Note: ${pickup['notes']}',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          
-          const SizedBox(height: 16),
-          
-          // Action buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: () => _handleRejectPickup(pickupId, donationId),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
-                ),
-                child: const Text('Reject'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () => _handleAcceptPickup(pickupId, donationId),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: PamigayColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Accept'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildPickupsList(List<Map<String, dynamic>> pickups, {required String status}) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: pickups.length,
-      itemBuilder: (context, index) {
-        return _buildPickupCard(pickups[index], status: status);
-      },
-    );
-  }
-  
-  Widget _buildPickupCard(Map<String, dynamic> pickup, {required String status}) {
-    final pickupId = pickup['id'].toString();
-    final donationName = pickup['donation_name'].toString();
-    final organizationName = pickup['organization_name'].toString();
-    
-    // Format pickup time
-    final pickupTime = DateTime.parse(pickup['pickup_time']);
-    final pickupTimeStr = DateFormat('MMM d, yyyy, h:mm a').format(pickupTime);
-    
-    // Format completed time if available
-    String? completedTimeStr;
-    if (status == 'Completed' && pickup['completed_at'] != null) {
-      final completedTime = DateTime.parse(pickup['completed_at']);
-      completedTimeStr = DateFormat('MMM d, yyyy, h:mm a').format(completedTime);
-    }
-    
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with status
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: status == 'Accepted' 
-                  ? Colors.blue.withOpacity(0.1)
-                  : Colors.green.withOpacity(0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  status == 'Accepted' ? Icons.access_time : Icons.check_circle,
-                  color: status == 'Accepted' ? Colors.blue : Colors.green,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  status,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: status == 'Accepted' ? Colors.blue : Colors.green,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Pickup details
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Donation name
-                Text(
-                  donationName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                
-                // Organization name
-                Row(
-                  children: [
-                    const Icon(Icons.business, size: 16, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Organization: $organizationName',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                
-                // Pickup time
-                Row(
-                  children: [
-                    const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Pickup: $pickupTimeStr',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                  ],
-                ),
-                
-                // Completed time for completed pickups
-                if (completedTimeStr != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
+          // Tab content
+          Expanded(
+            child: _isLoading
+                ? const ShimmerLoader(itemCount: 3)
+                : TabBarView(
+                    controller: _tabController,
                     children: [
-                      const Icon(Icons.check_circle, size: 16, color: Colors.green),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Completed on: $completedTimeStr',
-                        style: TextStyle(
-                          color: Colors.green[700],
-                        ),
-                      ),
+                      // Pending requests tab
+                      _buildPendingPickupsList(),
+                      
+                      // Accepted pickups tab
+                      _buildPickupsList(_acceptedPickups, status: 'Accepted'),
+                      
+                      // Completed pickups tab
+                      _buildPickupsList(_completedPickups, status: 'Completed'),
                     ],
                   ),
-                ],
-                
-                // Notes if available
-                if (pickup['notes'] != null && pickup['notes'].toString().isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Notes:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          pickup['notes'],
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                
-                const SizedBox(height: 16),
-                
-                // Actions based on status
-                if (status == 'Accepted')
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          // View details logic would go here
-                        },
-                        icon: const Icon(Icons.visibility, size: 16),
-                        label: const Text('View Details'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.blue,
-                          side: const BorderSide(color: Colors.blue),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () => _handleCompletePickup(pickupId),
-                        icon: const Icon(Icons.check_circle, size: 16),
-                        label: const Text('Mark as Completed'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: PamigayColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          // View details logic would go here
-                        },
-                        icon: const Icon(Icons.visibility, size: 16),
-                        label: const Text('View Details'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: PamigayColors.primary,
-                          side: BorderSide(color: PamigayColors.primary),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
           ),
         ],
       ),
