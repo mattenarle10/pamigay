@@ -611,23 +611,25 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen>
             primaryColor: PamigayColors.primary,
           ),
           
-          // Tab content
+          // Tab content - Wrap in SafeArea to prevent overflow
           Expanded(
-            child: _isLoading
-                ? const ShimmerLoader(itemCount: 3)
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Pending requests tab
-                      _buildPendingPickupsList(),
-                      
-                      // Accepted pickups tab
-                      _buildPickupsList(_acceptedPickups, status: 'Accepted'),
-                      
-                      // Completed pickups tab
-                      _buildPickupsList(_completedPickups, status: 'Completed'),
-                    ],
-                  ),
+            child: SafeArea(
+              child: _isLoading
+                  ? const ShimmerLoader(itemCount: 3)
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Pending requests tab
+                        _buildPendingPickupsList(),
+                        
+                        // Accepted pickups tab
+                        _buildPickupsList(_acceptedPickups, status: 'Accepted'),
+                        
+                        // Completed pickups tab
+                        _buildPickupsList(_completedPickups, status: 'Completed'),
+                      ],
+                    ),
+            ),
           ),
         ],
       ),

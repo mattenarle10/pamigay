@@ -11,7 +11,7 @@ class PickupService {
   final String requestPickupEndpoint = dotenv.env['API_REQUEST_PICKUP'] ?? '/organization-request_pickup.php';
   final String getMyPickupsEndpoint = dotenv.env['API_GET_MY_PICKUPS'] ?? '/organization-get_my_pickups.php';
   final String updatePickupEndpoint = dotenv.env['API_UPDATE_PICKUP'] ?? '/organization-update_pickup.php';
-  final String getRestaurantPickupsEndpoint = dotenv.env['API_GET_RESTAURANT_PICKUPS'] ?? '/resto-get_pickup_requests.php';
+  final String getRestaurantPickupsEndpoint = '/resto-get_pickup_requests.php';
   final String updateRestaurantPickupEndpoint = dotenv.env['API_UPDATE_RESTAURANT_PICKUP'] ?? '/resto-update_pickup.php';
   
   // Singleton pattern

@@ -35,8 +35,8 @@ class _AddDonationScreenState extends State<AddDonationScreen> {
   final _donationService = DonationService();
   
   DateTime _pickupDeadline = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _pickupWindowStart = TimeOfDay.now();
-  TimeOfDay _pickupWindowEnd = TimeOfDay.now().replacing(hour: TimeOfDay.now().hour + 2);
+  late TimeOfDay _pickupWindowStart;
+  late TimeOfDay _pickupWindowEnd;
   
   String _conditionStatus = 'Fresh';
   String _category = 'Human Intake';
@@ -44,7 +44,18 @@ class _AddDonationScreenState extends State<AddDonationScreen> {
   File? _imageFile;
   bool _isUploading = false;
   String _errorMessage = '';
-  
+
+  @override
+  void initState() {
+    super.initState();
+    final now = TimeOfDay.now();
+    _pickupWindowStart = now;
+    _pickupWindowEnd = TimeOfDay(
+      hour: (now.hour + 2) % 24,
+      minute: now.minute,
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
