@@ -1,0 +1,683 @@
+/* Neumorphism Design System for Pamigay Admin */
+:root {
+    --primary-color: #00C2DF; /* Turquoise from the logo */
+    --secondary-color: #FFFFFF; /* White */
+    --accent-color: #000000; /* Black */
+    --background-color: #ECF0F3; /* Light gray with slight blue tint - neumorphic background */
+    --text-primary: #2D3748; /* Dark blue-gray */
+    --text-secondary: #718096; /* Medium gray */
+    --error-color: #FF3B30;
+    --success-color: #4CD964;
+    --warning-color: #f6c23e;
+    --info-color: #36b9cc;
+    --dark-color: #5a5c69;
+    --light-color: #f8f9fc;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --highlight-color: rgba(255, 255, 255, 0.8);
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 80px;
+    --neu-distance: 6px; /* Controls shadow distance */
+    --neu-blur: 12px; /* Controls shadow blur */
+    --neu-border-radius: 16px; /* Rounded corners */
+    --header-height: 70px;
+}
+
+body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* Neumorphic Elements */
+.neu-card {
+    background-color: var(--background-color);
+    border-radius: var(--neu-border-radius);
+    box-shadow: 
+        var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+    transition: all 0.3s ease;
+    border: none;
+    overflow: hidden;
+}
+
+.neu-card-inset {
+    background-color: var(--background-color);
+    border-radius: var(--neu-border-radius);
+    box-shadow: 
+        inset var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.neu-button {
+    background-color: var(--background-color);
+    border-radius: 12px;
+    border: none;
+    color: var(--text-primary);
+    padding: 10px 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 
+        var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+}
+
+.neu-button:hover, .neu-card:hover {
+    box-shadow: 
+        calc(var(--neu-distance) - 2px) calc(var(--neu-distance) - 2px) calc(var(--neu-blur) - 2px) var(--shadow-color),
+        calc(-1 * var(--neu-distance) + 2px) calc(-1 * var(--neu-distance) + 2px) calc(var(--neu-blur) - 2px) var(--highlight-color);
+}
+
+.neu-button:active, .neu-button.active {
+    box-shadow: 
+        inset var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+}
+
+.neu-button.primary {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 
+        var(--neu-distance) var(--neu-distance) var(--neu-blur) rgba(0, 194, 223, 0.4),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) rgba(255, 255, 255, 0.7);
+}
+
+.neu-button.primary:hover {
+    background-color: var(--primary-color);
+    box-shadow: 
+        calc(var(--neu-distance) - 2px) calc(var(--neu-distance) - 2px) calc(var(--neu-blur) - 2px) rgba(0, 194, 223, 0.4),
+        calc(-1 * var(--neu-distance) + 2px) calc(-1 * var(--neu-distance) + 2px) calc(var(--neu-blur) - 2px) rgba(255, 255, 255, 0.7);
+}
+
+.neu-button.primary:active, .neu-button.primary.active {
+    background-color: var(--primary-color);
+    box-shadow: 
+        inset var(--neu-distance) var(--neu-distance) var(--neu-blur) rgba(0, 0, 0, 0.2),
+        inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) rgba(255, 255, 255, 0.5);
+}
+
+/* Form Elements */
+.neu-input {
+    background-color: var(--background-color);
+    border-radius: 12px;
+    border: none;
+    padding: 10px 15px;
+    width: 100%;
+    color: var(--text-primary);
+    box-shadow: 
+        inset var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+    transition: all 0.3s ease;
+}
+
+.neu-input:focus {
+    outline: none;
+    box-shadow: 
+        inset calc(var(--neu-distance) - 2px) calc(var(--neu-distance) - 2px) calc(var(--neu-blur) - 2px) var(--shadow-color),
+        inset calc(-1 * var(--neu-distance) + 2px) calc(-1 * var(--neu-distance) + 2px) calc(var(--neu-blur) - 2px) var(--highlight-color);
+}
+
+/* Login Page Styles */
+.login-page {
+    background-color: var(--background-color);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.login-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 1.5rem;
+}
+
+/* Main Layout */
+.admin-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--background-color);
+}
+
+/* Header */
+.admin-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    background-color: var(--background-color);
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.05),
+        0 -4px 8px rgba(255, 255, 255, 0.8);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+.admin-header .logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.admin-header .logo {
+    height: 40px;
+    width: auto;
+    margin-right: 15px;
+}
+
+.admin-header .logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.admin-header .nav-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Navigation */
+.main-navigation {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+}
+
+.nav-item {
+    display: inline-block;
+    margin: 0 10px;
+    position: relative;
+}
+
+.nav-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(0, 194, 223, 0.1);
+    color: var(--primary-color);
+}
+
+.nav-link.active {
+    background-color: var(--background-color);
+    color: var(--primary-color);
+    box-shadow: 
+        inset var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+}
+
+.nav-link i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+}
+
+/* User Actions */
+.user-actions {
+    display: flex;
+    align-items: center;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.user-profile-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 20px;
+    color: var(--text-primary);
+}
+
+.user-profile-btn:hover {
+    background-color: rgba(0, 194, 223, 0.1);
+}
+
+.user-profile-btn i {
+    font-size: 1.5rem;
+    margin-right: 8px;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 10px;
+    background-color: var(--background-color);
+    border-radius: var(--neu-border-radius);
+    box-shadow: 
+        var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+    min-width: 200px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.user-profile.open .user-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: block;
+    padding: 10px 15px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(0, 194, 223, 0.1);
+    color: var(--primary-color);
+}
+
+/* Main Content */
+.main-content {
+    padding: calc(var(--header-height) + 30px) 30px 30px;
+    flex: 1;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: var(--text-primary);
+}
+
+/* Dashboard Cards */
+.stat-card {
+    padding: 20px;
+    border-radius: var(--neu-border-radius);
+    position: relative;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.stat-icon {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3rem;
+    opacity: 0.2;
+}
+
+.stat-title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+/* Tables */
+.neu-table {
+    width: 100%;
+}
+
+.neu-table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 12px 15px;
+}
+
+.neu-table td {
+    padding: 12px 15px;
+    color: var(--text-primary);
+}
+
+.neu-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.neu-table tbody tr:hover {
+    background-color: rgba(0, 194, 223, 0.05);
+}
+
+/* Badges */
+.neu-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.neu-badge.primary {
+    background-color: rgba(0, 194, 223, 0.2);
+    color: var(--primary-color);
+}
+
+.neu-badge.success {
+    background-color: rgba(76, 217, 100, 0.2);
+    color: var(--success-color);
+}
+
+.neu-badge.warning {
+    background-color: rgba(246, 194, 62, 0.2);
+    color: var(--warning-color);
+}
+
+.neu-badge.danger {
+    background-color: rgba(255, 59, 48, 0.2);
+    color: var(--error-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 0 15px;
+    }
+    
+    .main-navigation {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--background-color);
+        box-shadow: 
+            0 -4px 8px rgba(0, 0, 0, 0.05),
+            0 4px 8px rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        z-index: 1000;
+        margin-right: 0;
+    }
+    
+    .nav-item {
+        margin: 0;
+    }
+    
+    .nav-link {
+        flex-direction: column;
+        padding: 8px;
+        text-align: center;
+        font-size: 0.8rem;
+    }
+    
+    .nav-link i {
+        margin-right: 0;
+        margin-bottom: 5px;
+        font-size: 1.2rem;
+    }
+    
+    .main-content {
+        padding: calc(var(--header-height) + 15px) 15px 80px;
+    }
+}
+
+/* Mobile menu toggle */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+@media (max-width: 991px) {
+    .menu-toggle {
+        display: block;
+    }
+    
+    .main-navigation {
+        display: none;
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        right: 0;
+        background-color: var(--background-color);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px 0;
+    }
+    
+    .main-navigation.show {
+        display: flex;
+    }
+    
+    .nav-item {
+        display: block;
+        margin: 5px 15px;
+    }
+}
+
+/* Notification Styles */
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notification-item {
+  display: flex;
+  padding: 1.25rem;
+  border-radius: var(--neu-border-radius);
+  box-shadow: var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+  background-color: var(--background-color);
+  transition: all 0.3s ease;
+  position: relative;
+  gap: 1rem;
+}
+
+.notification-item.unread {
+  box-shadow: var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+  border-left: 4px solid var(--primary-color);
+}
+
+.notification-item:hover {
+  transform: translateY(-2px);
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+  background-color: var(--background-color);
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.notification-time {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.notification-body {
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.notification-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notification-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-self: center;
+}
+
+.neu-button-sm {
+  background-color: var(--background-color);
+  border: none;
+  border-radius: var(--neu-border-radius);
+  padding: 0.4rem 0.65rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neu-button-sm:hover {
+  box-shadow: calc(var(--neu-distance) - 2px) calc(var(--neu-distance) - 2px) calc(var(--neu-blur) - 2px) var(--shadow-color),
+        calc(-1 * var(--neu-distance) + 2px) calc(-1 * var(--neu-distance) + 2px) calc(var(--neu-blur) - 2px) var(--highlight-color);
+}
+
+.neu-button-sm:active {
+  box-shadow: inset var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+}
+
+.neu-button-sm.primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.neu-button-sm.danger {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.view-action {
+  margin-left: auto;
+}
+
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pagination .page-item {
+  margin: 0 0.25rem;
+}
+
+.pagination .page-link {
+  border: none;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--neu-border-radius);
+  box-shadow: var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: inset var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+        inset calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+}
+
+.pagination .page-item.disabled .page-link {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination .page-link:hover:not(.disabled) {
+  box-shadow: calc(var(--neu-distance) - 2px) calc(var(--neu-distance) - 2px) calc(var(--neu-blur) - 2px) var(--shadow-color),
+        calc(-1 * var(--neu-distance) + 2px) calc(-1 * var(--neu-distance) + 2px) calc(var(--neu-blur) - 2px) var(--highlight-color);
+}
+
+/* Additional Badge Styles */
+.neu-badge.info {
+  background-color: var(--info-color);
+}
+
+.neu-badge.warning {
+  background-color: var(--warning-color);
+}
+
+.neu-badge.success {
+  background-color: var(--success-color);
+}
+
+.neu-badge.danger {
+  background-color: var(--error-color);
+}
+
+/* Responsive adjustments for notifications */
+@media (max-width: 768px) {
+  .notification-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .notification-icon {
+    margin-bottom: 0.5rem;
+  }
+  
+  .notification-actions {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+  
+  .notification-footer {
+    flex-wrap: wrap;
+  }
+}

@@ -6,227 +6,176 @@
     <title>Pamigay Admin - Users</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/neumorphism.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="dashboard-page">
-    <div class="wrapper">
-        <!-- Sidebar -->
-        <nav id="sidebar" class="active">
-            <div class="sidebar-header">
-                <h3>Pamigay Admin</h3>
-            </div>
+<body>
+    <div class="admin-layout">
+        <!-- Navbar Container - Will be populated by JavaScript -->
+        <div id="navbarContainer"></div>
 
-            <ul class="list-unstyled components">
-                <li>
-                    <a href="dashboard.html">
-                        <i class="bi bi-speedometer2"></i> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="donations.html">
-                        <i class="bi bi-box-seam"></i> Donations
-                    </a>
-                </li>
-                <li>
-                    <a href="pickups.html">
-                        <i class="bi bi-truck"></i> Pickups
-                    </a>
-                </li>
-                <li class="active">
-                    <a href="users.html">
-                        <i class="bi bi-people"></i> Users
-                    </a>
-                </li>
-                <li>
-                    <a href="notifications.html">
-                        <i class="bi bi-bell"></i> Notifications
-                    </a>
-                </li>
-                <li>
-                    <a href="#" id="logoutBtn">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-        <!-- Page Content -->
-        <div id="content">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <div class="container-fluid">
-                    <button type="button" id="sidebarCollapse" class="btn btn-primary">
-                        <i class="bi bi-list"></i>
-                    </button>
-                    <div class="ms-auto d-flex align-items-center">
-                        <div class="dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle me-1"></i> Admin
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="profile.html">Profile</a></li>
-                                <li><a class="dropdown-item" href="#" id="logoutDropdown">Logout</a></li>
-                            </ul>
-                        </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <h1 class="page-title">Users</h1>
+            
+            <!-- Filters -->
+            <div class="neu-card p-4 mb-4">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="roleFilter" class="form-label fw-medium mb-2">Role</label>
+                        <select class="neu-input" id="roleFilter">
+                            <option value="">All Roles</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Organization">Organization</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="userSearchInput" class="form-label fw-medium mb-2">Search</label>
+                        <input type="text" class="neu-input" id="userSearchInput" placeholder="Search by name, email...">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="statusFilter" class="form-label fw-medium mb-2">Status</label>
+                        <select class="neu-input" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
                     </div>
                 </div>
-            </nav>
-
-            <div class="container-fluid p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Users</h2>
-                </div>
-                
-                <!-- Filters -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="roleFilter" class="form-label">Role</label>
-                                <select class="form-select" id="roleFilter">
-                                    <option value="">All Roles</option>
-                                    <option value="Restaurant">Restaurant</option>
-                                    <option value="Organization">Organization</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="userSearchInput" class="form-label">Search</label>
-                                <input type="text" class="form-control" id="userSearchInput" placeholder="Search users...">
-                            </div>
-                            <div class="col-md-4 mb-3 d-flex align-items-end">
-                                <button class="btn btn-primary me-2" id="applyUserFilters">Apply Filters</button>
-                                <button class="btn btn-secondary" id="resetUserFilters">Reset</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Users Table -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Phone</th>
-                                        <th>Location</th>
-                                        <th>Created</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>25</td>
-                                        <td>gb12309773189440</td>
-                                        <td>gb@123.com</td>
-                                        <td><span class="badge bg-info">Organization</span></td>
-                                        <td>dasdsadsa</td>
-                                        <td>-</td>
-                                        <td>Apr 25, 2025</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="25">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="25">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>24</td>
-                                        <td>aaadsdss</td>
-                                        <td>rey@123com</td>
-                                        <td><span class="badge bg-info">Organization</span></td>
-                                        <td>dsads</td>
-                                        <td>ddddd</td>
-                                        <td>Apr 25, 2025</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="24">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="24">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>23</td>
-                                        <td>orgy109</td>
-                                        <td>orgy@109.com</td>
-                                        <td><span class="badge bg-info">Organization</span></td>
-                                        <td>orgyyy1201202</td>
-                                        <td>-</td>
-                                        <td>Apr 25, 2025</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="23">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="23">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>22</td>
-                                        <td>bosslot</td>
-                                        <td>orgy@108.com</td>
-                                        <td><span class="badge bg-info">Organization</span></td>
-                                        <td>09876554311</td>
-                                        <td>-</td>
-                                        <td>Apr 25, 2025</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="22">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="22">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>21</td>
-                                        <td>aaa</td>
-                                        <td>orgy@107.com</td>
-                                        <td><span class="badge bg-info">Organization</span></td>
-                                        <td>09773189400</td>
-                                        <td>bcccc</td>
-                                        <td>Apr 24, 2025</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="21">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="21">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <!-- Pagination -->
-                        <nav aria-label="Users pagination">
-                            <ul class="pagination justify-content-center mt-4">
-                                <li class="page-item disabled">
-                                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-                                </li>
-                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                <li class="page-item"><a class="page-link" href="#">4</a></li>
-                                <li class="page-item"><a class="page-link" href="#">5</a></li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">Next</a>
-                                </li>
-                            </ul>
-                        </nav>
+                <div class="row">
+                    <div class="col-12 text-end">
+                        <button class="neu-button primary me-2" id="applyFilters">
+                            <i class="bi bi-funnel me-2"></i>Apply Filters
+                        </button>
+                        <button class="neu-button" id="resetFilters">
+                            <i class="bi bi-x-circle me-2"></i>Reset
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Users Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="neu-card stat-card">
+                        <div class="stat-title">Total Users</div>
+                        <div class="stat-value">42</div>
+                        <i class="bi bi-people stat-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="neu-card stat-card">
+                        <div class="stat-title">Restaurants</div>
+                        <div class="stat-value">18</div>
+                        <i class="bi bi-shop stat-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="neu-card stat-card">
+                        <div class="stat-title">Organizations</div>
+                        <div class="stat-value">24</div>
+                        <i class="bi bi-building stat-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="neu-card stat-card">
+                        <div class="stat-title">New This Month</div>
+                        <div class="stat-value">7</div>
+                        <i class="bi bi-person-plus stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="neu-card p-4">
+                <div class="table-responsive">
+                    <table class="neu-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Location</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>25</td>
+                                <td>gb12309773189440</td>
+                                <td>gb@123.com</td>
+                                <td>Restaurant</td>
+                                <td><span class="neu-badge primary">Active</span></td>
+                                <td>Manila</td>
+                                <td>Apr 27, 2025</td>
+                                <td>
+                                    <button class="neu-button primary me-1 btn-sm p-1" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="25">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="neu-button danger btn-sm p-1" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="25">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>24</td>
+                                <td>aaadsdss</td>
+                                <td>rey@123com</td>
+                                <td>Restaurant</td>
+                                <td><span class="neu-badge primary">Active</span></td>
+                                <td>Quezon City</td>
+                                <td>Apr 26, 2025</td>
+                                <td>
+                                    <button class="neu-button primary me-1 btn-sm p-1" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="24">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="neu-button danger btn-sm p-1" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="24">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>23</td>
+                                <td>orgy109</td>
+                                <td>orgy@109.com</td>
+                                <td>Organization</td>
+                                <td><span class="neu-badge primary">Active</span></td>
+                                <td>Makati</td>
+                                <td>Apr 25, 2025</td>
+                                <td>
+                                    <button class="neu-button primary me-1 btn-sm p-1" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="23">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="neu-button danger btn-sm p-1" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="23">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>22</td>
+                                <td>bosslot</td>
+                                <td>orgy@108.com</td>
+                                <td>Organization</td>
+                                <td><span class="neu-badge primary">Active</span></td>
+                                <td>Pasig</td>
+                                <td>Apr 25, 2025</td>
+                                <td>
+                                    <button class="neu-button primary me-1 btn-sm p-1" data-bs-toggle="modal" data-bs-target="#viewUserModal" data-id="22">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="neu-button danger btn-sm p-1" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-id="22">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- View User Modal -->
@@ -239,47 +188,45 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-4 text-center mb-3">
-                            <img src="https://via.placeholder.com/150" id="userProfileImage" class="img-fluid rounded-circle mb-3" alt="Profile Image">
-                            <h5 id="userName">bosslot</h5>
-                            <span class="badge bg-info" id="userRole">Organization</span>
-                        </div>
-                        <div class="col-md-8">
-                            <table class="table">
-                                <tr>
-                                    <th>ID</th>
-                                    <td id="userId">22</td>
-                                </tr>
-                                <tr>
-                                    <th>Email</th>
-                                    <td id="userEmail">orgy@108.com</td>
-                                </tr>
-                                <tr>
-                                    <th>Phone</th>
-                                    <td id="userPhone">09876554311</td>
-                                </tr>
-                                <tr>
-                                    <th>Location</th>
-                                    <td id="userLocation">-</td>
-                                </tr>
-                                <tr>
-                                    <th>Created</th>
-                                    <td id="userCreated">Apr 25, 2025</td>
-                                </tr>
-                                <tr>
-                                    <th>Last Updated</th>
-                                    <td id="userUpdated">Apr 25, 2025</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
                         <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">User Stats</h6>
-                                </div>
-                                <div class="card-body">
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3">Basic Information</h6>
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>Name</th>
+                                        <td id="userName">gb12309773189440</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email</th>
+                                        <td id="userEmail">gb@123.com</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Role</th>
+                                        <td id="userRole">Restaurant</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status</th>
+                                        <td id="userStatus"><span class="neu-badge primary">Active</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Location</th>
+                                        <td id="userLocation">Manila</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Phone</th>
+                                        <td id="userPhone">+63 912 345 6789</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Last Updated</th>
+                                        <td id="userUpdated">Apr 25, 2025</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3">User Stats</h6>
+                                <div class="neu-card-inset p-3">
                                     <table class="table table-sm">
                                         <tr>
                                             <th>Total Donated</th>
@@ -300,16 +247,12 @@
                                     </table>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Recent Activity</h6>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-group" id="userRecentActivity">
-                                        <li class="list-group-item">Completed pickup for donation #16 (Apr 25, 2025)</li>
-                                        <li class="list-group-item">Requested pickup for donation #17 (Apr 25, 2025)</li>
+                            <div class="mb-3">
+                                <h6 class="fw-bold mb-3">Recent Activity</h6>
+                                <div class="neu-card-inset p-3">
+                                    <ul class="list-group list-group-flush" id="userRecentActivity">
+                                        <li class="list-group-item bg-transparent">Completed pickup for donation #16 (Apr 25, 2025)</li>
+                                        <li class="list-group-item bg-transparent">Requested pickup for donation #17 (Apr 25, 2025)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -317,7 +260,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="neu-button" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -336,14 +279,74 @@
                     <input type="hidden" id="deleteUserId">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmUserDelete">Delete</button>
+                    <button type="button" class="neu-button" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="neu-button danger" id="confirmUserDelete">Delete</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        // Load the navbar component
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNavbar('navbarContainer', 'users');
+        });
+        
+        // Apply filters
+        document.getElementById('applyFilters').addEventListener('click', function() {
+            // Filter logic would go here
+            console.log('Applying filters...');
+        });
+        
+        // Reset filters
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            document.getElementById('roleFilter').value = '';
+            document.getElementById('userSearchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+        });
+        
+        // View user modal
+        const viewUserModal = document.getElementById('viewUserModal');
+        if (viewUserModal) {
+            viewUserModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                
+                // In a real implementation, you would fetch user details using the ID
+                // For now, we'll just log it
+                console.log('Viewing user with ID:', id);
+                
+                // Update modal title with the user ID
+                document.getElementById('viewUserModalLabel').textContent = `User Details - ID: ${id}`;
+            });
+        }
+        
+        // Delete user modal
+        const deleteUserModal = document.getElementById('deleteUserModal');
+        if (deleteUserModal) {
+            deleteUserModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                
+                document.getElementById('deleteUserId').value = id;
+            });
+            
+            document.getElementById('confirmUserDelete').addEventListener('click', function() {
+                const id = document.getElementById('deleteUserId').value;
+                
+                // In a real implementation, you would delete the user using the ID
+                console.log('Deleting user with ID:', id);
+                
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(deleteUserModal);
+                modal.hide();
+                
+                // Reload the page or update UI
+                // location.reload();
+            });
+        }
+    </script>
 </body>
 </html>
