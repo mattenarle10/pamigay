@@ -85,36 +85,43 @@
                 </div>
                 <div class="col-md-3 mb-4">
                     <div class="neu-card stat-card">
-                        <div class="stat-title">Organizations</div>
-                        <div class="stat-value">3</div>
-                        <i class="bi bi-building stat-icon"></i>
+                        <div class="stat-title">Cancelled</div>
+                        <div class="stat-value" id="cancelledCard">3</div>
+                        <i class="bi bi-x-circle stat-icon"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Pickups Table -->
             <div class="neu-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Showing <span id="displayedCount">0</span> of <span id="totalCount">0</span> pickups</h5>
+                </div>
                 <div class="table-responsive">
                     <table class="neu-table">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Organization</th>
                                 <th>Donation</th>
-                                <th>Requested Date</th>
+                                <th>Quantity</th>
+                                <th>Restaurant</th>
+                                <th>Organization</th>
                                 <th>Pickup Time</th>
                                 <th>Status</th>
+                                <th>Notes</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>16</td>
-                                <td>thanks</td>
                                 <td>hehe</td>
-                                <td>Apr 27, 2025</td>
+                                <td>100 kg</td>
+                                <td>hersheys</td>
+                                <td>thanks</td>
                                 <td>15:30 - 17:30</td>
                                 <td><span class="neu-badge primary">Accepted</span></td>
+                                <td>Some notes</td>
                                 <td>
                                     <button class="neu-button primary me-1 btn-sm p-1" data-bs-toggle="modal" data-bs-target="#viewPickupModal" data-id="16">
                                         <i class="bi bi-eye"></i>
@@ -126,11 +133,13 @@
                             </tr>
                             <tr>
                                 <td>15</td>
-                                <td>thanks</td>
                                 <td>Chocs</td>
-                                <td>Apr 26, 2025</td>
+                                <td>50 kg</td>
+                                <td>hersheys</td>
+                                <td>thanks</td>
                                 <td>13:00 - 15:00</td>
                                 <td><span class="neu-badge success">Completed</span></td>
+                                <td>Some notes</td>
                                 <td>
                                     <button class="neu-button primary me-1 btn-sm p-1" data-bs-toggle="modal" data-bs-target="#viewPickupModal" data-id="15">
                                         <i class="bi bi-eye"></i>
@@ -139,11 +148,13 @@
                             </tr>
                             <tr>
                                 <td>12</td>
-                                <td>bosslot</td>
                                 <td>aaaaa</td>
-                                <td>Apr 25, 2025</td>
+                                <td>200 kg</td>
+                                <td>hersheys</td>
+                                <td>bosslot</td>
                                 <td>09:00 - 11:00</td>
                                 <td><span class="neu-badge warning">Requested</span></td>
+                                <td>Some notes</td>
                                 <td>
                                     <button class="neu-button primary me-1 btn-sm p-1" data-bs-toggle="modal" data-bs-target="#viewPickupModal" data-id="12">
                                         <i class="bi bi-eye"></i>
@@ -216,10 +227,6 @@
                                         <th>Quantity</th>
                                         <td id="donationQuantity">100 kg</td>
                                     </tr>
-                                    <tr>
-                                        <th>Category</th>
-                                        <td id="donationCategory">Human Intake</td>
-                                    </tr>
                                 </table>
                             </div>
                             <div class="mb-3">
@@ -287,6 +294,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/components.js"></script>
+    <script src="js/pickups-api.js"></script>
     <script>
         // Load the navbar component
         document.addEventListener('DOMContentLoaded', function() {
@@ -310,7 +318,7 @@
             
             // Set up no results message
             noResults.innerHTML = `
-                <td colspan="8" class="text-center py-4">
+                <td colspan="9" class="text-center py-4">
                     <div class="empty-state">
                         <i class="bi bi-search fs-1 text-muted mb-3"></i>
                         <h5 class="text-muted">No pickups match your filters</h5>
@@ -372,8 +380,8 @@
                 let visibleCount = 0;
                 
                 pickupRows.forEach(row => {
-                    const rowStatus = row.querySelector('td:nth-child(5) span').textContent.toLowerCase();
-                    const rowDate = row.querySelector('td:nth-child(4)').textContent;
+                    const rowStatus = row.querySelector('td:nth-child(7) span').textContent.toLowerCase();
+                    const rowDate = row.querySelector('td:nth-child(6)').textContent;
                     const rowText = row.textContent.toLowerCase();
                     
                     // Date filtering
@@ -431,17 +439,17 @@
                 // Update status counts
                 const pendingCount = Array.from(pickupRows).filter(row => 
                     row.style.display !== 'none' && 
-                    row.querySelector('td:nth-child(5) span').textContent.toLowerCase().includes('pending')
+                    row.querySelector('td:nth-child(7) span').textContent.toLowerCase().includes('pending')
                 ).length;
                 
                 const completedCount = Array.from(pickupRows).filter(row => 
                     row.style.display !== 'none' && 
-                    row.querySelector('td:nth-child(5) span').textContent.toLowerCase().includes('completed')
+                    row.querySelector('td:nth-child(7) span').textContent.toLowerCase().includes('completed')
                 ).length;
                 
                 const cancelledCount = Array.from(pickupRows).filter(row => 
                     row.style.display !== 'none' && 
-                    row.querySelector('td:nth-child(5) span').textContent.toLowerCase().includes('cancelled')
+                    row.querySelector('td:nth-child(7) span').textContent.toLowerCase().includes('cancelled')
                 ).length;
                 
                 // Update status cards
@@ -509,7 +517,7 @@
                     modal.hide();
                     
                     // For demo purposes, update the status in the table
-                    const statusCell = document.querySelector(`tr[data-id="${id}"] td:nth-child(5) span`);
+                    const statusCell = document.querySelector(`tr[data-id="${id}"] td:nth-child(7) span`);
                     if (statusCell) {
                         // Remove all classes
                         statusCell.className = '';
@@ -567,7 +575,7 @@
                     modal.hide();
                     
                     // For demo purposes, update the status in the table
-                    const statusCell = document.querySelector(`tr[data-id="${id}"] td:nth-child(5) span`);
+                    const statusCell = document.querySelector(`tr[data-id="${id}"] td:nth-child(7) span`);
                     if (statusCell) {
                         statusCell.className = 'neu-badge danger';
                         statusCell.textContent = 'Cancelled';

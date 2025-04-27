@@ -7,7 +7,166 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/neumorphism.css">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            position: relative;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-title {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .stat-icon {
+            position: absolute;
+            bottom: 1rem;
+            right: 1.5rem;
+            font-size: 2.5rem;
+            opacity: 0.2;
+        }
+        .section-card {
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .activity-item {
+            display: flex;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            background: var(--neu-background);
+            box-shadow: var(--neu-shadow-small);
+            transition: all 0.3s ease;
+        }
+        .activity-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--neu-shadow-medium);
+        }
+        .activity-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--neu-background);
+            box-shadow: var(--neu-shadow-inset);
+            margin-right: 1rem;
+        }
+        .activity-icon i {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+        .activity-content {
+            flex: 1;
+        }
+        .activity-text {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .activity-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #777;
+        }
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .action-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .action-card:hover {
+            transform: translateY(-5px);
+        }
+        .action-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        .action-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .action-description {
+            font-size: 0.85rem;
+            color: #777;
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-available, .badge-requested {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .badge-pending, .badge-accepted {
+            background-color: #fff3cd;
+            color: #664d03;
+        }
+        .badge-completed {
+            background-color: #cfe2ff;
+            color: #084298;
+        }
+        .badge-cancelled {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .view-details-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            padding: 0;
+            cursor: pointer;
+        }
+        .view-details-btn:hover {
+            text-decoration: underline;
+        }
+        .subsection-title {
+            font-size: 1.25rem;
+            margin: 1rem 0;
+            color: #555;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-layout">
@@ -16,130 +175,173 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <h1 class="page-title">Dashboard</h1>
+            <div class="dashboard-header">
+                <h1 class="page-title">Dashboard</h1>
+                <div>
+                    <button class="neu-button primary" id="refreshDashboard">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
             
-            <!-- Stats Cards -->
-            <div class="row">
-                <div class="col-md-3 mb-4">
-                    <div class="neu-card stat-card">
-                        <div class="stat-title">Total Donations</div>
-                        <div class="stat-value">25</div>
-                        <i class="bi bi-box-seam stat-icon"></i>
+            <!-- Quick Actions -->
+            <div class="neu-card section-card">
+                <div class="section-header">
+                    <h2 class="section-title mb-0">Quick Actions</h2>
+                </div>
+                <div class="quick-actions">
+                    <a href="donations.html" class="neu-card action-card">
+                        <div class="action-icon">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="action-title">Manage Donations</div>
+                        <div class="action-description">View and manage all food donations</div>
+                    </a>
+                    <a href="pickups.html" class="neu-card action-card">
+                        <div class="action-icon">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <div class="action-title">Manage Pickups</div>
+                        <div class="action-description">Track and manage food pickups</div>
+                    </a>
+                    <a href="users.html" class="neu-card action-card">
+                        <div class="action-icon">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="action-title">Manage Users</div>
+                        <div class="action-description">View and manage user accounts</div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Stats Overview -->
+            <div class="neu-card section-card">
+                <div class="section-header">
+                    <h2 class="section-title mb-0">Overview</h2>
+                </div>
+                
+                <!-- Users Stats -->
+                <h3 class="subsection-title">Users</h3>
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Total Users</div>
+                            <div class="stat-value" id="totalUsersValue">0</div>
+                            <i class="bi bi-people stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Restaurants</div>
+                            <div class="stat-value" id="restaurantsValue">0</div>
+                            <i class="bi bi-shop stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Organizations</div>
+                            <div class="stat-value" id="organizationsValue">0</div>
+                            <i class="bi bi-building stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">New This Month</div>
+                            <div class="stat-value" id="newUsersValue">0</div>
+                            <i class="bi bi-person-plus stat-icon"></i>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3 mb-4">
-                    <div class="neu-card stat-card">
-                        <div class="stat-title">Total Pickups</div>
-                        <div class="stat-value">18</div>
-                        <i class="bi bi-truck stat-icon"></i>
+
+                <!-- Donation Stats -->
+                <h3 class="subsection-title">Donations</h3>
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Total Donations</div>
+                            <div class="stat-value" id="totalDonationsValue">0</div>
+                            <i class="bi bi-box-seam stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Available</div>
+                            <div class="stat-value" id="availableDonationsValue">0</div>
+                            <i class="bi bi-check-circle stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Pending Pickup</div>
+                            <div class="stat-value" id="pendingDonationsValue">0</div>
+                            <i class="bi bi-hourglass-split stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Completed</div>
+                            <div class="stat-value" id="completedDonationsValue">0</div>
+                            <i class="bi bi-trophy stat-icon"></i>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3 mb-4">
-                    <div class="neu-card stat-card">
-                        <div class="stat-title">Active Users</div>
-                        <div class="stat-value">42</div>
-                        <i class="bi bi-people stat-icon"></i>
+
+                <!-- Pickup Stats -->
+                <h3 class="subsection-title">Pickups</h3>
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Total Pickups</div>
+                            <div class="stat-value" id="totalPickupsValue">0</div>
+                            <i class="bi bi-truck stat-icon"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3 mb-4">
-                    <div class="neu-card stat-card">
-                        <div class="stat-title">Organizations</div>
-                        <div class="stat-value">15</div>
-                        <i class="bi bi-building stat-icon"></i>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Requested</div>
+                            <div class="stat-value" id="requestedPickupsValue">0</div>
+                            <i class="bi bi-clock-history stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Accepted</div>
+                            <div class="stat-value" id="acceptedPickupsValue">0</div>
+                            <i class="bi bi-check2-circle stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="neu-card stat-card">
+                            <div class="stat-title">Completed</div>
+                            <div class="stat-value" id="completedPickupsValue">0</div>
+                            <i class="bi bi-trophy stat-icon"></i>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Recent Activity -->
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="neu-card p-4">
-                        <h5 class="fw-bold mb-4">Recent Donations</h5>
-                        <div class="table-responsive">
-                            <table class="neu-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>25</td>
-                                        <td>hehe</td>
-                                        <td><span class="neu-badge primary">Pending</span></td>
-                                        <td>Apr 27, 2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>24</td>
-                                        <td>Chocs</td>
-                                        <td><span class="neu-badge success">Completed</span></td>
-                                        <td>Apr 26, 2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>23</td>
-                                        <td>aaaaa</td>
-                                        <td><span class="neu-badge success">Completed</span></td>
-                                        <td>Apr 25, 2025</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+            <div class="neu-card section-card">
+                <div class="section-header">
+                    <h2 class="section-title mb-0">Recent Activity</h2>
+                    <div class="dropdown">
+                        <button class="neu-button" type="button" id="activityFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-filter me-2"></i>Filter
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="activityFilterDropdown">
+                            <li><a class="dropdown-item active" href="#" data-filter="all">All Activity</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter="donation">Donations Only</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter="pickup">Pickups Only</a></li>
+                        </ul>
                     </div>
                 </div>
-                <div class="col-md-6 mb-4">
-                    <div class="neu-card p-4">
-                        <h5 class="fw-bold mb-4">Recent Pickups</h5>
-                        <div class="table-responsive">
-                            <table class="neu-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Organization</th>
-                                        <th>Donation</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>16</td>
-                                        <td>thanks</td>
-                                        <td>hehe</td>
-                                        <td><span class="neu-badge primary">Accepted</span></td>
-                                        <td>Apr 27, 2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>15</td>
-                                        <td>thanks</td>
-                                        <td>Chocs</td>
-                                        <td><span class="neu-badge success">Completed</span></td>
-                                        <td>Apr 26, 2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>12</td>
-                                        <td>bosslot</td>
-                                        <td>aaaaa</td>
-                                        <td><span class="neu-badge warning">Requested</span></td>
-                                        <td>Apr 25, 2025</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <div class="activity-list" id="recentActivityList">
+                    <!-- Activity items will be populated by JavaScript -->
+                    <div class="text-center p-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- User Activity Chart -->
-            <div class="row">
-                <div class="col-md-12 mb-4">
-                    <div class="neu-card p-4">
-                        <h5 class="fw-bold mb-4">Activity Overview</h5>
-                        <div class="chart-container">
-                            <canvas id="activityChart"></canvas>
-                        </div>
+                        <p class="mt-2">Loading recent activity...</p>
                     </div>
                 </div>
             </div>
@@ -147,60 +349,41 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/components.js"></script>
+    <script src="js/dashboard-api.js"></script>
     <script>
         // Load the navbar component
         document.addEventListener('DOMContentLoaded', function() {
             loadNavbar('navbarContainer', 'dashboard');
-        });
-        
-        // Activity chart
-        const ctx = document.getElementById('activityChart').getContext('2d');
-        const activityChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Apr 21', 'Apr 22', 'Apr 23', 'Apr 24', 'Apr 25', 'Apr 26', 'Apr 27'],
-                datasets: [{
-                    label: 'Donations',
-                    data: [3, 5, 2, 6, 4, 3, 2],
-                    borderColor: '#00C2DF',
-                    backgroundColor: 'rgba(0, 194, 223, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }, {
-                    label: 'Pickups',
-                    data: [2, 3, 1, 4, 5, 2, 1],
-                    borderColor: '#4CD964',
-                    backgroundColor: 'rgba(76, 217, 100, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
+            
+            // Set up activity filter
+            document.querySelectorAll('[data-filter]').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Update active state
+                    document.querySelectorAll('[data-filter]').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Apply filter
+                    if (filter === 'all') {
+                        document.querySelectorAll('.activity-item').forEach(item => {
+                            item.style.display = 'flex';
+                        });
+                    } else {
+                        document.querySelectorAll('.activity-item').forEach(item => {
+                            if (item.getAttribute('data-type') === filter) {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    }
-                }
-            }
+                });
+            });
         });
     </script>
 </body>
