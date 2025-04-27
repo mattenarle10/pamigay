@@ -2,6 +2,7 @@
 // Include database connection and API response helper
 require_once 'db_connect.php';
 require_once 'api_response.php';
+require_once 'notification_helper.php';
 
 // Enable error logging to help debug the 500 error
 ini_set('display_errors', 1);
@@ -156,6 +157,25 @@ try {
     }
     
     $donation_details = mysqli_fetch_assoc($donation_result);
+    
+    // Get organization name for notification
+    $org_query = "SELECT name FROM users WHERE id = '$collector_id'";
+    $org_result = mysqli_query($conn, $org_query);
+    $org_name = "Organization";
+    
+    if ($org_result && mysqli_num_rows($org_result) > 0) {
+        $org_data = mysqli_fetch_assoc($org_result);
+        $org_name = $org_data['name'];
+    }
+    
+    // Notify restaurant about the pickup request
+    NotificationHelper::createNotification(
+        $donation['restaurant_id'],
+        'pickup_requested',
+        'New Pickup Request',
+        "{$org_name} has requested to pick up your donation: {$donation_details['donation_name']}",
+        $pickup_id
+    );
     
     ApiResponse::send(ApiResponse::success('Pickup request created successfully', [
         'pickup_id' => $pickup_id,

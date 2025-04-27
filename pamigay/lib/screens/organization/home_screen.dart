@@ -9,6 +9,7 @@ import 'package:pamigay/screens/organization/available_donations_screen.dart';
 import 'package:pamigay/screens/organization/my_pickups_screen.dart';
 import 'package:pamigay/components/navigation/bottom_nav_bar.dart';
 import 'package:pamigay/screens/common/dashboard_screen.dart';
+import 'package:pamigay/services/notification_service.dart';
 
 /// Organization-specific home screen.
 ///
@@ -27,15 +28,18 @@ class OrganizationHomeScreen extends StatefulWidget {
 }
 
 class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
+  final NotificationService _notificationService = NotificationService();
   bool _isLoading = false;
   List<Map<String, dynamic>> _availableDonations = [];
   List<Map<String, dynamic>> _myPickups = [];
   String _errorMessage = '';
+  int _unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
     _fetchData();
+    _fetchUnreadNotifications();
   }
 
   Future<void> _fetchData() async {
@@ -59,6 +63,21 @@ class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
         _isLoading = false;
         _errorMessage = 'Error fetching data: $e';
       });
+    }
+  }
+
+  Future<void> _fetchUnreadNotifications() async {
+    try {
+      final userId = widget.userData['id'].toString();
+      final count = await _notificationService.getUnreadCount(userId);
+      
+      if (mounted) {
+        setState(() {
+          _unreadNotifications = count;
+        });
+      }
+    } catch (e) {
+      print('Error fetching unread notifications: $e');
     }
   }
 
@@ -187,14 +206,19 @@ class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
           ],
         ),
         NotificationBadge(
-          count: 2,
+          count: _unreadNotifications,
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => NotificationsScreen(userData: widget.userData),
+                builder: (context) => NotificationsScreen(
+                  userData: widget.userData,
+                ),
               ),
-            );
+            ).then((_) {
+              // Refresh unread notifications count when returning from notifications screen
+              _fetchUnreadNotifications();
+            });
           },
         ),
       ],

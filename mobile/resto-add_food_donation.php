@@ -2,6 +2,7 @@
 // Include database connection and API response helper
 require_once 'db_connect.php';
 require_once 'api_response.php';
+require_once 'notification_helper.php';
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -86,6 +87,32 @@ $query = "INSERT INTO food_donations
 
 if (mysqli_query($conn, $query)) {
     $donation_id = mysqli_insert_id($conn);
+    
+    // Get restaurant name to include in notification
+    $restaurant_query = "SELECT name FROM users WHERE id = '$restaurant_id'";
+    $restaurant_result = mysqli_query($conn, $restaurant_query);
+    $restaurant_name = "Restaurant";
+    
+    if ($restaurant_result && mysqli_num_rows($restaurant_result) > 0) {
+        $restaurant_data = mysqli_fetch_assoc($restaurant_result);
+        $restaurant_name = $restaurant_data['name'];
+    }
+    
+    // Notify all organizations about the new donation
+    $orgs_query = "SELECT id FROM users WHERE role = 'Organization'";
+    $orgs_result = mysqli_query($conn, $orgs_query);
+    
+    if ($orgs_result) {
+        while ($org = mysqli_fetch_assoc($orgs_result)) {
+            NotificationHelper::createNotification(
+                $org['id'],
+                'donation_created',
+                'New Donation Available',
+                "{$restaurant_name} has added a new donation: {$name}",
+                $donation_id
+            );
+        }
+    }
     
     ApiResponse::send(ApiResponse::success('Food donation added successfully', [
         'donation_id' => $donation_id,

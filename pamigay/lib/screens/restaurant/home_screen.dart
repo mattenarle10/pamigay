@@ -10,6 +10,8 @@ import 'package:pamigay/components/notifications/notification_badge.dart';
 import 'package:pamigay/screens/common/auth/landing_screen.dart';
 import 'package:pamigay/screens/common/notifications_screen.dart';
 import 'package:pamigay/screens/common/dashboard_screen.dart';
+import 'package:pamigay/services/notification_service.dart';
+
 /// Restaurant-specific home screen.
 ///
 /// This screen displays a restaurant dashboard with important metrics
@@ -28,14 +30,17 @@ class RestaurantHomeScreen extends StatefulWidget {
 
 class _RestaurantHomeScreenState extends State<RestaurantHomeScreen> {
   final AuthService _authService = AuthService();
+  final NotificationService _notificationService = NotificationService();
   bool _isLoading = false;
   List<Map<String, dynamic>> _myDonations = [];
   String _errorMessage = '';
+  int _unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
     _fetchDonations();
+    _fetchUnreadNotifications();
   }
 
   Future<void> _fetchDonations() async {
@@ -66,6 +71,21 @@ class _RestaurantHomeScreenState extends State<RestaurantHomeScreen> {
         _isLoading = false;
         _errorMessage = 'Error: ${e.toString()}';
       });
+    }
+  }
+
+  Future<void> _fetchUnreadNotifications() async {
+    try {
+      final userId = widget.userData['id'].toString();
+      final count = await _notificationService.getUnreadCount(userId);
+      
+      if (mounted) {
+        setState(() {
+          _unreadNotifications = count;
+        });
+      }
+    } catch (e) {
+      print('Error fetching unread notifications: $e');
     }
   }
 
@@ -145,16 +165,21 @@ class _RestaurantHomeScreenState extends State<RestaurantHomeScreen> {
         ),
         // Notification badge
         NotificationBadge(
-          count: 2, // Placeholder count
+          count: _unreadNotifications,
           onTap: () {
             // Navigate to notifications screen
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => NotificationsScreen(userData: widget.userData),
+                builder: (context) => NotificationsScreen(
+                  userData: widget.userData,
+                ),
                 fullscreenDialog: true,
               ),
-            );
+            ).then((_) {
+              // Refresh unread notifications count when returning from notifications screen
+              _fetchUnreadNotifications();
+            });
           },
         ),
       ],

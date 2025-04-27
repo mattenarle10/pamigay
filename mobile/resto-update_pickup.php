@@ -2,6 +2,7 @@
 // Include database connection and API response helper
 require_once 'db_connect.php';
 require_once 'api_response.php';
+require_once 'notification_helper.php';
 
 // Debug logging
 error_log('[' . date('d-M-Y H:i:s e') . '] POST data: ' . print_r($_POST, true));
@@ -214,6 +215,73 @@ try {
     error_log('[' . date('d-M-Y H:i:s e') . '] Status value length: ' . strlen($db_status));
     error_log('[' . date('d-M-Y H:i:s e') . '] Status value hex: ' . bin2hex($db_status));
     error_log('[' . date('d-M-Y H:i:s e') . '] Pickup ID value: ' . $pickup_id . ' (type: ' . gettype($pickup_id) . ')');
+    
+    // Get donation and user names for notifications
+    $donation_name_query = "SELECT name FROM food_donations WHERE id = '{$pickup['donation_id']}'";
+    $donation_result = mysqli_query($conn, $donation_name_query);
+    $donation_name = "donation";
+    
+    if ($donation_result && mysqli_num_rows($donation_result) > 0) {
+        $donation_data = mysqli_fetch_assoc($donation_result);
+        $donation_name = $donation_data['name'];
+    }
+    
+    $org_query = "SELECT name FROM users WHERE id = '{$pickup['collector_id']}'";
+    $org_result = mysqli_query($conn, $org_query);
+    $org_name = "Organization";
+    
+    if ($org_result && mysqli_num_rows($org_result) > 0) {
+        $org_data = mysqli_fetch_assoc($org_result);
+        $org_name = $org_data['name'];
+    }
+    
+    $restaurant_query = "SELECT name FROM users WHERE id = '$restaurant_id'";
+    $restaurant_result = mysqli_query($conn, $restaurant_query);
+    $restaurant_name = "Restaurant";
+    
+    if ($restaurant_result && mysqli_num_rows($restaurant_result) > 0) {
+        $restaurant_data = mysqli_fetch_assoc($restaurant_result);
+        $restaurant_name = $restaurant_data['name'];
+    }
+    
+    // Send notifications based on status
+    if ($status == 'Accepted') {
+        // Notify organization about acceptance
+        NotificationHelper::createNotification(
+            $pickup['collector_id'],
+            'pickup_accepted',
+            'Pickup Request Accepted',
+            "{$restaurant_name} has accepted your pickup request for {$donation_name}",
+            $pickup_id
+        );
+    } elseif ($status == 'Rejected') {
+        // Notify organization about rejection
+        NotificationHelper::createNotification(
+            $pickup['collector_id'],
+            'pickup_rejected',
+            'Pickup Request Rejected',
+            "{$restaurant_name} has rejected your pickup request for {$donation_name}",
+            $pickup_id
+        );
+    } elseif ($status == 'Completed') {
+        // Notify organization about completion
+        NotificationHelper::createNotification(
+            $pickup['collector_id'],
+            'pickup_completed',
+            'Pickup Completed',
+            "Your pickup for {$donation_name} has been marked as completed!",
+            $pickup_id
+        );
+        
+        // Notify restaurant about completion
+        NotificationHelper::createNotification(
+            $restaurant_id,
+            'pickup_completed',
+            'Pickup Completed',
+            "Pickup by {$org_name} for {$donation_name} has been completed!",
+            $pickup_id
+        );
+    }
     
     // Try a direct update with variables
     $direct_update_query = "UPDATE food_pickups SET status = '$db_status', updated_at = NOW() WHERE id = $pickup_id";

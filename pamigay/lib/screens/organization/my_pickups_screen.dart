@@ -4,7 +4,7 @@ import 'package:pamigay/utils/constants.dart';
 import 'package:pamigay/services/pickup_service.dart';
 import 'package:pamigay/services/donation_service.dart';
 import 'package:pamigay/components/cards/pickup_card.dart';
-import 'package:pamigay/screens/common/donation_detail_screen.dart';
+import 'package:pamigay/screens/common/dashboard_screen.dart';
 import 'package:pamigay/components/search/search_filter_bar.dart';
 import 'package:pamigay/components/notifications/notification_badge.dart';
 import 'package:pamigay/screens/common/notifications_screen.dart';
@@ -12,7 +12,8 @@ import 'package:pamigay/components/loaders/shimmer_loader.dart';
 import 'package:pamigay/screens/organization/available_donations_screen.dart';
 import 'package:pamigay/screens/organization/home_screen.dart';
 import 'package:pamigay/screens/common/profile_screen.dart';
-
+import 'package:pamigay/services/notification_service.dart';
+import 'package:pamigay/screens/common/donation_detail_screen.dart';
 /// Screen for organizations to view and manage their pickup requests.
 ///
 /// This screen displays both pending and completed pickups, allowing
@@ -628,8 +629,14 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
             else if (_tabController.index == 0)
               ElevatedButton.icon(
                 onPressed: () {
-                  // Navigate to available donations
-                  Navigator.pushNamed(context, '/organization/available-donations');
+                  // Navigate to available donations through dashboard
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DashboardScreen(initialIndex: 1),
+                    ),
+                    (route) => false,
+                  );
                 },
                 icon: const Icon(Icons.search, size: 16),
                 label: const Text('Browse Donations'),
@@ -692,9 +699,9 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
     final donation = {
       'id': donationId,
       'name': pickup['donation_name'] ?? 'Unknown Donation',
-      'description': pickup['donation_description'] ?? '',
-      'restaurant_id': pickup['restaurant_id'] ?? '',
       'restaurant_name': pickup['restaurant_name'] ?? 'Unknown Restaurant',
+      'restaurant_id': pickup['restaurant_id'],
+      'quantity': pickup['donation_quantity'] ?? 'Unknown',
       'image': pickup['donation_image'],
       'status': 'Pending Pickup', // This is the donation status, not the pickup status
       'pickup_window_start': pickup['pickup_window_start'],
@@ -710,7 +717,10 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
           donation: donation,
         ),
       ),
-    ).then((_) => _fetchPickups());
+    ).then((_) {
+      // Refresh pickups when returning from donation details
+      _fetchPickups();
+    });
   }
   
   Future<void> _cancelPickup(Map<String, dynamic> pickup) async {
