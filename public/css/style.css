@@ -1,0 +1,295 @@
+/* General Styles */
+:root {
+    --primary-color: #00C2DF; /* Turquoise from the logo */
+    --secondary-color: #FFFFFF; /* White */
+    --accent-color: #000000; /* Black */
+    --text-primary: #000000; /* Black */
+    --text-secondary: #6E6E6E; /* Gray */
+    --error-color: #FF3B30;
+    --success-color: #4CD964;
+    --warning-color: #f6c23e;
+    --info-color: #36b9cc;
+    --dark-color: #5a5c69;
+    --light-color: #f8f9fc;
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 80px;
+}
+
+body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f8f9fc;
+}
+
+/* Login Page Styles */
+.login-page {
+    background-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #224abe 100%);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+.login-card {
+    margin-top: -50px;
+}
+
+.app-name {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.app-tagline {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+/* Dashboard Layout */
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+#sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    background: var(--secondary-color);
+    color: var(--text-primary);
+    transition: all 0.3s;
+    position: fixed;
+    height: 100vh;
+    z-index: 999;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+#sidebar.active {
+    min-width: var(--sidebar-collapsed-width);
+    max-width: var(--sidebar-collapsed-width);
+    text-align: center;
+}
+
+#sidebar.active .sidebar-header h3,
+#sidebar.active .sidebar-header img.logo-full {
+    display: none;
+}
+
+#sidebar.active .sidebar-header img.logo-icon {
+    display: block;
+    margin: 0 auto;
+    width: 40px;
+    height: auto;
+}
+
+#sidebar.active .sidebar-header strong {
+    display: block;
+}
+
+#sidebar ul li a {
+    text-align: left;
+    padding: 10px 15px;
+    display: block;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+}
+
+#sidebar.active ul li a {
+    padding: 15px 10px;
+    text-align: center;
+    font-size: 0.85em;
+}
+
+#sidebar.active ul li a i {
+    margin-right: 0;
+    display: block;
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+
+#sidebar ul li a:hover,
+#sidebar ul li.active > a {
+    color: var(--primary-color);
+    background: rgba(0, 194, 223, 0.1);
+    border-left: 3px solid var(--primary-color);
+}
+
+#sidebar.active ul li a:hover,
+#sidebar.active ul li.active > a {
+    border-left: none;
+    border-top: 3px solid var(--primary-color);
+}
+
+#sidebar ul li a i {
+    margin-right: 10px;
+    color: var(--primary-color);
+}
+
+#sidebar .sidebar-header {
+    padding: 20px;
+    background: var(--secondary-color);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#sidebar .sidebar-header img.logo-full {
+    height: 40px;
+    width: auto;
+}
+
+#sidebar .sidebar-header img.logo-icon {
+    display: none;
+}
+
+#content {
+    width: 100%;
+    min-height: 100vh;
+    transition: all 0.3s;
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding-left: var(--sidebar-width);
+}
+
+#content.active {
+    padding-left: var(--sidebar-collapsed-width);
+}
+
+/* Cards and Stats */
+.stat-card {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 0.75rem 1.25rem;
+}
+
+/* Chart Container */
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    #sidebar {
+        min-width: 80px;
+        max-width: 80px;
+        text-align: center;
+        margin-left: -80px !important;
+    }
+    #sidebar.active {
+        margin-left: 0 !important;
+    }
+    #content {
+        padding-left: 0;
+    }
+    #content.active {
+        padding-left: 80px;
+    }
+    #sidebarCollapse span {
+        display: none;
+    }
+}
+
+/* Table Styles */
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fc;
+}
+
+/* Badge Styles */
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+}
+
+/* Form Controls */
+.form-control:focus, .form-select:focus {
+    border-color: #bac8f3;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #00adc7;
+    border-color: #00adc7;
+}
+
+.btn-secondary {
+    background-color: var(--dark-color);
+    border-color: var(--dark-color);
+}
+
+.btn-info {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+}
+
+.btn-danger {
+    background-color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+/* Modal Styles */
+.modal-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.modal-footer {
+    background-color: #f8f9fc;
+    border-top: 1px solid #e3e6f0;
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Navbar */
+.navbar {
+    padding: 0.5rem 1rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    background-color: var(--secondary-color) !important;
+}
+
+#sidebarCollapse {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+#sidebarCollapse:hover {
+    background-color: #00adc7;
+    border-color: #00adc7;
+}
