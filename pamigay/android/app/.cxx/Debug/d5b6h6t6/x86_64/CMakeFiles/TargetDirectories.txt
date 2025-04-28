@@ -1,0 +1,2 @@
+/Applications/XAMPP/xamppfiles/htdocs/pamigay/pamigay/android/app/.cxx/Debug/d5b6h6t6/x86_64/CMakeFiles/edit_cache.dir
+/Applications/XAMPP/xamppfiles/htdocs/pamigay/pamigay/android/app/.cxx/Debug/d5b6h6t6/x86_64/CMakeFiles/rebuild_cache.dir

@@ -49,8 +49,25 @@ if (!isset($_FILES['profile_image']) || $_FILES['profile_image']['error'] != 0) 
 
 // Create uploads directory if it doesn't exist
 $upload_dir = '../uploads/profile_images/';
-if (!file_exists($upload_dir)) {
-    mkdir($upload_dir, 0777, true);
+// Use document root for absolute path
+$absolute_upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/pamigay/uploads/profile_images/';
+
+// Check if directory exists and create it if needed
+if (!file_exists($absolute_upload_dir)) {
+    if (!@mkdir($absolute_upload_dir, 0777, true)) {
+        error_log("Failed to create directory: $absolute_upload_dir - " . error_get_last()['message']);
+        ApiResponse::send(ApiResponse::error('Failed to create upload directory'));
+        exit();
+    }
+    @chmod($absolute_upload_dir, 0777);
+    error_log("Successfully created directory: $absolute_upload_dir");
+}
+
+// Verify directory is writable
+if (!is_writable($absolute_upload_dir)) {
+    error_log("Upload directory is not writable: $absolute_upload_dir");
+    ApiResponse::send(ApiResponse::error('Upload directory is not writable'));
+    exit();
 }
 
 // Get file info
@@ -75,7 +92,7 @@ if ($file_size > $max_size) {
 
 // Generate a unique filename
 $new_file_name = $user_id . '_' . time() . '.' . $file_ext;
-$upload_path = $upload_dir . $new_file_name;
+$upload_path = $absolute_upload_dir . $new_file_name;
 
 // Move the uploaded file
 if (move_uploaded_file($file_tmp, $upload_path)) {

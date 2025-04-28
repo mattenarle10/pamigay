@@ -78,7 +78,7 @@ if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
     $upload_dir = '../uploads/profile_images/';
     
     // Use document root for absolute path
-    $absolute_upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/pamigay-web/uploads/profile_images/';
+    $absolute_upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/pamigay/uploads/profile_images/';
     
     error_log("Attempting to use directory: $absolute_upload_dir");
     

@@ -50,10 +50,25 @@ if (!isset($_FILES['donation_image']) || $_FILES['donation_image']['error'] != 0
 
 // Create uploads directory if it doesn't exist
 $upload_dir = '../uploads/donation_images/';
-// Use absolute path instead of relative path
-//$upload_dir = '/Applications/XAMPP/xamppfiles/htdocs/pamigay-web/uploads/donation_images/';
-if (!file_exists($upload_dir)) {
-    mkdir($upload_dir, 0777, true);
+// Use document root for absolute path
+$absolute_upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/pamigay/uploads/donation_images/';
+
+// Check if directory exists and create it if needed
+if (!file_exists($absolute_upload_dir)) {
+    if (!@mkdir($absolute_upload_dir, 0777, true)) {
+        error_log("Failed to create directory: $absolute_upload_dir - " . error_get_last()['message']);
+        ApiResponse::send(ApiResponse::error('Failed to create upload directory'));
+        exit();
+    }
+    @chmod($absolute_upload_dir, 0777);
+    error_log("Successfully created directory: $absolute_upload_dir");
+}
+
+// Verify directory is writable
+if (!is_writable($absolute_upload_dir)) {
+    error_log("Upload directory is not writable: $absolute_upload_dir");
+    ApiResponse::send(ApiResponse::error('Upload directory is not writable'));
+    exit();
 }
 
 // Get file info
@@ -78,13 +93,13 @@ if ($file_size > $max_size) {
 
 // Generate a unique filename
 $new_file_name = 'donation_' . $user_id . '_' . time() . '.' . $file_ext;
-$upload_path = $upload_dir . $new_file_name;
+$upload_path = $absolute_upload_dir . $new_file_name;
 
 // Log file paths for debugging
 error_log("Temporary file: $file_tmp");
 error_log("Upload path: $upload_path");
-error_log("Upload directory exists: " . (file_exists($upload_dir) ? 'Yes' : 'No'));
-error_log("Upload directory is writable: " . (is_writable($upload_dir) ? 'Yes' : 'No'));
+error_log("Upload directory exists: " . (file_exists($absolute_upload_dir) ? 'Yes' : 'No'));
+error_log("Upload directory is writable: " . (is_writable($absolute_upload_dir) ? 'Yes' : 'No'));
 
 // Try to move the uploaded file
 if (move_uploaded_file($file_tmp, $upload_path)) {
@@ -106,18 +121,7 @@ if (move_uploaded_file($file_tmp, $upload_path)) {
             'image_url' => $relative_path
         ]));
     } else {
-        // Try one more approach - create the directory with full permissions
-        system('mkdir -p ' . escapeshellarg($upload_dir) . ' && chmod -R 777 ' . escapeshellarg($upload_dir));
-        
-        // Try again after setting permissions
-        if (copy($file_tmp, $upload_path)) {
-            $relative_path = 'uploads/donation_images/' . $new_file_name;
-            ApiResponse::send(ApiResponse::success('Donation image uploaded successfully (after permission fix)', [
-                'image_url' => $relative_path
-            ]));
-        } else {
-            ApiResponse::send(ApiResponse::error('Failed to upload file: ' . error_get_last()['message']));
-        }
+        ApiResponse::send(ApiResponse::error('Failed to upload file: ' . error_get_last()['message']));
     }
 }
 ?>
