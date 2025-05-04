@@ -4,6 +4,7 @@ import 'package:pamigay/services/auth_service.dart';
 import 'package:pamigay/utils/constants.dart';
 import 'package:pamigay/widgets/custom_text_field.dart';
 import 'package:pamigay/screens/common/dashboard_screen.dart';
+import 'package:pamigay/screens/common/auth/landing_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -82,7 +83,13 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // Navigate back to landing screen
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LandingScreen()),
+            );
+          },
         ),
         automaticallyImplyLeading: false,
       ),
