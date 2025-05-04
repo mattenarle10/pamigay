@@ -369,7 +369,7 @@ class _AddDonationScreenState extends State<AddDonationScreen> {
                                   });
                                 }
                               },
-                              items: <String>['kg', 'g', 'lb', 'pieces', 'servings', 'boxes']
+                              items: <String>['kg', 'g', 'lb', 'pieces', 'servings', 'boxes', 'liters', 'gallons']
                                 .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,

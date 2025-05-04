@@ -26,7 +26,7 @@ if (empty($email) || empty($password)) {
 }
 
 // Query to check user credentials
-$query = "SELECT id, email, password, name, role, phone_number FROM users WHERE email = '$email'";
+$query = "SELECT id, email, password, name, role, phone_number, profile_image, is_verified, verification_status FROM users WHERE email = '$email'";
 $result = mysqli_query($conn, $query);
 
 // Debug: Log query and result
@@ -44,12 +44,38 @@ if (mysqli_num_rows($result) > 0) {
     $user = mysqli_fetch_assoc($result);
     
     if (password_verify($password, $user['password'])) {
-        // Remove password from response
-        unset($user['password']);
-        
-        ApiResponse::send(ApiResponse::success('Login successful', [
-            'user' => $user
-        ]));
+        // Check if user is verified
+        if ($user['verification_status'] == 'Pending') {
+            ApiResponse::send(ApiResponse::error('Your account is pending verification by admin. Please wait for approval.', [
+                'verification_status' => 'Pending'
+            ]));
+        } else if ($user['verification_status'] == 'Rejected') {
+            ApiResponse::send(ApiResponse::error('Your account verification was rejected. Please contact support for assistance.', [
+                'verification_status' => 'Rejected'
+            ]));
+        } else if ($user['verification_status'] == 'Approved' && $user['is_verified'] == 1) {
+            // Remove password from response
+            unset($user['password']);
+            
+            ApiResponse::send(ApiResponse::success('Login successful', [
+                'user' => $user
+            ]));
+        } else {
+            // For backward compatibility with existing accounts
+            if ($user['verification_status'] === NULL) {
+                // Remove password from response
+                unset($user['password']);
+                
+                ApiResponse::send(ApiResponse::success('Login successful', [
+                    'user' => $user
+                ]));
+            } else {
+                ApiResponse::send(ApiResponse::error('Account status issue. Please contact support.', [
+                    'verification_status' => $user['verification_status'],
+                    'is_verified' => $user['is_verified']
+                ]));
+            }
+        }
     } else {
         ApiResponse::send(ApiResponse::error('Invalid password', [
             'email' => $email,

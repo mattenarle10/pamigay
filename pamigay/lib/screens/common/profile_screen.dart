@@ -210,13 +210,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {},
-          ),
-          const Divider(height: 1),
-          ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
             onTap: () async {

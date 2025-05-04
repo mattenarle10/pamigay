@@ -25,6 +25,7 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
   final _phoneController = TextEditingController();
   String _selectedRole = '';
   File? _profileImage;
+  File? _verificationDocument;
   
   final AuthService _authService = AuthService();
   final ImagePicker _imagePicker = ImagePicker();
@@ -62,6 +63,7 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
             'phone_number': _phoneController.text,
           },
           _profileImage,
+          _verificationDocument,
         );
 
         setState(() {
@@ -73,8 +75,9 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
         if (result['success']) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Registration successful! Please log in.'),
+              content: Text('Registration successful! Your account is pending verification by admin. You will be notified when approved.'),
               backgroundColor: Colors.green,
+              duration: Duration(seconds: 5),
             ),
           );
           Navigator.pushReplacement(
@@ -113,6 +116,36 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
         return;
       }
       
+      // Validate email format
+      final emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+      if (!emailRegExp.hasMatch(_emailController.text)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid email address'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
+      // Check for common disposable email domains
+      final email = _emailController.text.toLowerCase();
+      final domain = email.substring(email.lastIndexOf('@') + 1);
+      final invalidDomains = [
+        'example.com', 'test.com', '123.com', 'temp-mail.org', 
+        'tempmail.com', 'fakeinbox.com', 'mailinator.com'
+      ];
+      
+      if (invalidDomains.contains(domain)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please use a valid email address from a legitimate provider'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -134,8 +167,19 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
       );
       return;
     }
+    
+    // For the third page, ensure a verification document is uploaded
+    if (_currentPage == 2 && _verificationDocument == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please upload a verification document'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    if (_currentPage < 2) {
+    if (_currentPage < 3) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -156,6 +200,103 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
         _currentPage--;
       });
     }
+  }
+
+  void _showDocumentPickerOptions() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Upload Verification Document',
+                  style: PamigayTextStyles.heading.copyWith(
+                    fontSize: 18,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: PamigayColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: PamigayColors.primary,
+                    ),
+                  ),
+                  title: const Text('Take a Photo'),
+                  subtitle: const Text('Use your camera to capture a document'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final pickedFile = await _imagePicker.pickImage(
+                      source: ImageSource.camera,
+                      imageQuality: 70,
+                    );
+                    if (pickedFile != null) {
+                      setState(() {
+                        _verificationDocument = File(pickedFile.path);
+                      });
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: PamigayColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.photo_library,
+                      color: PamigayColors.primary,
+                    ),
+                  ),
+                  title: const Text('Choose from Gallery'),
+                  subtitle: const Text('Select an existing document from your device'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final pickedFile = await _imagePicker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 70,
+                    );
+                    if (pickedFile != null) {
+                      setState(() {
+                        _verificationDocument = File(pickedFile.path);
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    'Accepted formats: JPG, PNG, PDF',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -191,7 +332,7 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
-                children: List.generate(3, (index) {
+                children: List.generate(4, (index) {
                   return Expanded(
                     child: Container(
                       height: 4,
@@ -214,6 +355,7 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
                 children: [
                   _buildAccountCreationPage(),
                   _buildRoleSelectionPage(),
+                  _buildVerificationDocumentPage(),
                   _buildFinalDetailsPage(),
                 ],
               ),
@@ -526,6 +668,160 @@ class _MultiStepRegisterScreenState extends State<MultiStepRegisterScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationDocumentPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Verification Document',
+              style: PamigayTextStyles.heading.copyWith(
+                fontSize: 24,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _selectedRole == 'Restaurant' 
+                ? 'Please upload a business permit or any valid ID that proves you are a legitimate restaurant'
+                : 'Please upload an organization ID or any document that proves you are a legitimate organization',
+              style: PamigayTextStyles.subheading.copyWith(
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 30),
+            
+            // Document upload widget
+            GestureDetector(
+              onTap: _showDocumentPickerOptions,
+              child: Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _verificationDocument != null 
+                      ? PamigayColors.primary 
+                      : Colors.grey.shade300,
+                    width: 2,
+                  ),
+                ),
+                child: _verificationDocument != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.file(
+                        _verificationDocument!,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.upload_file,
+                          size: 48,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tap to upload document',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Take a photo or choose from gallery',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_verificationDocument != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Document uploaded successfully',
+                        style: TextStyle(color: Colors.green),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        setState(() {
+                          _verificationDocument = null;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            
+            const SizedBox(height: 30),
+            Text(
+              'Note: Your account will need to be verified by an admin before you can log in. This may take 1-2 business days.',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 30),
+            
+            // Next button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _goToNextPage,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: PamigayColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: const Text(
+                  'Next',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

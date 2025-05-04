@@ -91,7 +91,27 @@ class _DeleteDonationModalState extends State<DeleteDonationModal> {
           }
         });
       } else {
-        _showErrorSnackBar(result['message'] ?? 'Failed to delete donation');
+        // Check if the error is about donation being in progress or completed
+        if (result['message'] != null && 
+            result['message'].toString().contains('already in progress or completed')) {
+          // Close the current modal
+          if (mounted && Navigator.canPop(context)) {
+            Navigator.of(context).pop();
+          }
+          
+          // Show a new modal with the error message
+          showDialog(
+            context: context,
+            builder: (context) => DeleteConfirmationModal(
+              itemTitle: widget.donation['name'] ?? 'this donation',
+              itemType: 'donation',
+              onConfirm: () => Navigator.of(context).pop(),
+              errorMessage: result['message'],
+            ),
+          );
+        } else {
+          _showErrorSnackBar(result['message'] ?? 'Failed to delete donation');
+        }
       }
     } catch (e) {
       _showErrorSnackBar('Error: ${e.toString()}');

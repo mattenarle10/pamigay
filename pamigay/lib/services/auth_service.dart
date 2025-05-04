@@ -57,7 +57,7 @@ class AuthService {
   }
 
   // Register user
-  Future<Map<String, dynamic>> register(Map<String, dynamic> userData, File? profileImage) async {
+  Future<Map<String, dynamic>> register(Map<String, dynamic> userData, File? profileImage, File? verificationDocument) async {
     try {
       final registerEndpoint = dotenv.get('API_REGISTER', fallback: '/user-register.php');
       print('Register URL: $baseUrl$registerEndpoint');
@@ -89,6 +89,37 @@ class AuthService {
           await MultipartFile.fromFile(
             profileImage.path,
             filename: profileImage.path.split('/').last,
+            contentType: contentType,
+          ),
+        ));
+      }
+      
+      // Add verification document if provided
+      if (verificationDocument != null) {
+        print('Adding verification document: ${verificationDocument.path}');
+        
+        // Get file extension
+        String fileExt = verificationDocument.path.split('.').last.toLowerCase();
+        MediaType contentType;
+        
+        // Set proper content type based on file extension
+        if (fileExt == 'png') {
+          contentType = MediaType('image', 'png');
+        } else if (fileExt == 'jpg' || fileExt == 'jpeg') {
+          contentType = MediaType('image', 'jpeg');
+        } else if (fileExt == 'gif') {
+          contentType = MediaType('image', 'gif');
+        } else if (fileExt == 'pdf') {
+          contentType = MediaType('application', 'pdf');
+        } else {
+          contentType = MediaType('image', 'jpeg'); // Default
+        }
+        
+        formData.files.add(MapEntry(
+          'verification_document',
+          await MultipartFile.fromFile(
+            verificationDocument.path,
+            filename: verificationDocument.path.split('/').last,
             contentType: contentType,
           ),
         ));

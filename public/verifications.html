@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pamigay Admin - User Verifications</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/neumorphism.css">
+    <style>
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .section-card {
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-pending {
+            background-color: #fff3cd;
+            color: #664d03;
+        }
+        .badge-approved {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .badge-rejected {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .verification-item {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            background: var(--neu-background);
+            box-shadow: var(--neu-shadow-small);
+            transition: all 0.3s ease;
+        }
+        .verification-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--neu-shadow-medium);
+        }
+        .verification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .verification-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .verification-detail {
+            flex: 1;
+            min-width: 200px;
+        }
+        .verification-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        .verification-value {
+            font-weight: 500;
+        }
+        .verification-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        .document-preview {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: var(--neu-shadow-small);
+        }
+        .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .filter-btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--neu-shadow-small);
+        }
+        .filter-btn:not(.active) {
+            background: var(--neu-background);
+            box-shadow: var(--neu-shadow-inset);
+        }
+        .filter-btn:not(.active):hover {
+            background: var(--neu-background-hover);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+        .empty-state-icon {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+        .empty-state-text {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Navbar Container - Will be populated by JavaScript -->
+        <div id="navbarContainer"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h1 class="page-title">User Verifications</h1>
+                <div>
+                    <button class="neu-button primary" id="refreshVerifications">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Verification Management -->
+            <div class="neu-card section-card">
+                <div class="section-header">
+                    <h2 class="section-title mb-0">Verification Requests</h2>
+                </div>
+                
+                <!-- Filter Controls -->
+                <div class="filter-controls">
+                    <div class="filter-btn active" data-filter="all">All</div>
+                    <div class="filter-btn" data-filter="pending">Pending</div>
+                    <div class="filter-btn" data-filter="approved">Approved</div>
+                    <div class="filter-btn" data-filter="rejected">Rejected</div>
+                </div>
+                
+                <!-- Verification List -->
+                <div id="verificationsList">
+                    <!-- Will be populated by JavaScript -->
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="bi bi-hourglass"></i>
+                        </div>
+                        <div class="empty-state-text">Loading verification requests...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Verification Detail Modal -->
+    <div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="verificationModalLabel">Verification Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="verificationModalContent">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="neu-button secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="neu-button success" id="approveBtn">Approve</button>
+                    <button type="button" class="neu-button danger" id="rejectBtn">Reject</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        // Load navbar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load navbar component
+            loadNavbar();
+            
+            // Initialize verification management
+            initVerificationManagement();
+        });
+
+        // Initialize verification management
+        function initVerificationManagement() {
+            // Fetch verification requests
+            fetchVerificationRequests();
+            
+            // Set up event listeners
+            document.getElementById('refreshVerifications').addEventListener('click', fetchVerificationRequests);
+            
+            // Set up filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    // Apply filter
+                    const filter = this.getAttribute('data-filter');
+                    applyFilter(filter);
+                });
+            });
+            
+            // Set up modal buttons
+            document.getElementById('approveBtn').addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                updateVerificationStatus(userId, 'Approved');
+            });
+            
+            document.getElementById('rejectBtn').addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                updateVerificationStatus(userId, 'Rejected');
+            });
+        }
+
+        // Fetch verification requests from API
+        function fetchVerificationRequests() {
+            // Show loading state
+            document.getElementById('verificationsList').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-hourglass"></i>
+                    </div>
+                    <div class="empty-state-text">Loading verification requests...</div>
+                </div>
+            `;
+            
+            // Fetch data from API
+            fetch('../mobile/admin-get-verification-requests.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayVerificationRequests(data.data.verifications);
+                    } else {
+                        // Show error state
+                        document.getElementById('verificationsList').innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <div class="empty-state-text">Error loading verification requests: ${data.message}</div>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching verification requests:', error);
+                    // Show error state
+                    document.getElementById('verificationsList').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="empty-state-text">Error loading verification requests. Please try again.</div>
+                        </div>
+                    `;
+                });
+        }
+
+        // Display verification requests
+        function displayVerificationRequests(verifications) {
+            const container = document.getElementById('verificationsList');
+            
+            if (!verifications || verifications.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <div class="empty-state-text">No verification requests found</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            verifications.forEach(verification => {
+                const statusClass = `badge-${verification.verification_status.toLowerCase()}`;
+                
+                html += `
+                    <div class="verification-item" data-status="${verification.verification_status.toLowerCase()}">
+                        <div class="verification-header">
+                            <h3 class="verification-title">${verification.name}</h3>
+                            <span class="status-badge ${statusClass}">${verification.verification_status}</span>
+                        </div>
+                        <div class="verification-details">
+                            <div class="verification-detail">
+                                <div class="verification-label">Email</div>
+                                <div class="verification-value">${verification.email}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Role</div>
+                                <div class="verification-value">${verification.role}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Phone</div>
+                                <div class="verification-value">${verification.phone_number || 'Not provided'}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Registration Date</div>
+                                <div class="verification-value">${formatDate(verification.created_at)}</div>
+                            </div>
+                        </div>
+                        <div class="verification-actions">
+                            <button class="neu-button primary view-verification-btn" data-user-id="${verification.id}">
+                                <i class="bi bi-eye me-1"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add event listeners to view buttons
+            const viewButtons = document.querySelectorAll('.view-verification-btn');
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    openVerificationModal(userId, verifications);
+                });
+            });
+            
+            // Apply current filter
+            const activeFilter = document.querySelector('.filter-btn.active').getAttribute('data-filter');
+            applyFilter(activeFilter);
+        }
+
+        // Open verification modal
+        function openVerificationModal(userId, verifications) {
+            const verification = verifications.find(v => v.id === userId);
+            
+            if (!verification) {
+                console.error('Verification not found for user ID:', userId);
+                return;
+            }
+            
+            const modalContent = document.getElementById('verificationModalContent');
+            const approveBtn = document.getElementById('approveBtn');
+            const rejectBtn = document.getElementById('rejectBtn');
+            
+            // Set user ID for action buttons
+            approveBtn.setAttribute('data-user-id', userId);
+            rejectBtn.setAttribute('data-user-id', userId);
+            
+            // Show/hide buttons based on current status
+            if (verification.verification_status === 'Pending') {
+                approveBtn.style.display = 'block';
+                rejectBtn.style.display = 'block';
+            } else {
+                approveBtn.style.display = 'none';
+                rejectBtn.style.display = 'none';
+            }
+            
+            // Prepare document preview
+            let documentPreview = '';
+            if (verification.verification_document) {
+                const fileExt = verification.verification_document.split('.').pop().toLowerCase();
+                if (fileExt === 'pdf') {
+                    documentPreview = `
+                        <div class="mb-3">
+                            <embed src="../${verification.verification_document}" type="application/pdf" width="100%" height="500px" />
+                        </div>
+                    `;
+                } else {
+                    documentPreview = `
+                        <div class="mb-3">
+                            <img src="../${verification.verification_document}" class="document-preview" alt="Verification Document">
+                        </div>
+                    `;
+                }
+            } else {
+                documentPreview = `
+                    <div class="alert alert-warning">
+                        No verification document provided.
+                    </div>
+                `;
+            }
+            
+            // Prepare profile image preview
+            let profilePreview = '';
+            if (verification.profile_image) {
+                profilePreview = `
+                    <div class="mb-3">
+                        <img src="../${verification.profile_image}" class="document-preview" alt="Profile Image">
+                    </div>
+                `;
+            } else {
+                profilePreview = `
+                    <div class="alert alert-warning">
+                        No profile image provided.
+                    </div>
+                `;
+            }
+            
+            // Build modal content
+            modalContent.innerHTML = `
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h4>User Information</h4>
+                        <div class="verification-details">
+                            <div class="verification-detail">
+                                <div class="verification-label">Name</div>
+                                <div class="verification-value">${verification.name}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Email</div>
+                                <div class="verification-value">${verification.email}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Role</div>
+                                <div class="verification-value">${verification.role}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Phone</div>
+                                <div class="verification-value">${verification.phone_number || 'Not provided'}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Registration Date</div>
+                                <div class="verification-value">${formatDate(verification.created_at)}</div>
+                            </div>
+                            <div class="verification-detail">
+                                <div class="verification-label">Status</div>
+                                <div class="verification-value">
+                                    <span class="status-badge badge-${verification.verification_status.toLowerCase()}">
+                                        ${verification.verification_status}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Profile Image</h4>
+                        ${profilePreview}
+                    </div>
+                </div>
+                
+                <h4>Verification Document</h4>
+                ${documentPreview}
+                
+                ${verification.verification_notes ? `
+                    <h4>Verification Notes</h4>
+                    <div class="alert alert-info">
+                        ${verification.verification_notes}
+                    </div>
+                ` : ''}
+                
+                ${verification.verification_status !== 'Pending' ? `
+                    <div class="alert alert-${verification.verification_status === 'Approved' ? 'success' : 'danger'}">
+                        This verification request has been ${verification.verification_status.toLowerCase()}.
+                    </div>
+                ` : ''}
+            `;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('verificationModal'));
+            modal.show();
+        }
+
+        // Update verification status
+        function updateVerificationStatus(userId, status) {
+            // Show loading state
+            const approveBtn = document.getElementById('approveBtn');
+            const rejectBtn = document.getElementById('rejectBtn');
+            
+            approveBtn.disabled = true;
+            rejectBtn.disabled = true;
+            
+            const isApprove = status === 'Approved';
+            const actionBtn = isApprove ? approveBtn : rejectBtn;
+            
+            actionBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                ${isApprove ? 'Approving...' : 'Rejecting...'}
+            `;
+            
+            // Prepare notes (could be enhanced with a textarea input)
+            const notes = isApprove ? 'Approved by admin' : 'Rejected by admin';
+            
+            // Send update request
+            fetch('../mobile/admin-update-verification-status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `user_id=${userId}&status=${status}&notes=${encodeURIComponent(notes)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('verificationModal')).hide();
+                    
+                    // Show success message
+                    alert(`User verification ${status.toLowerCase()} successfully!`);
+                    
+                    // Refresh verification list
+                    fetchVerificationRequests();
+                } else {
+                    // Show error message
+                    alert(`Error: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating verification status:', error);
+                alert('An error occurred while updating the verification status. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                approveBtn.disabled = false;
+                rejectBtn.disabled = false;
+                approveBtn.innerHTML = 'Approve';
+                rejectBtn.innerHTML = 'Reject';
+            });
+        }
+
+        // Apply filter to verification list
+        function applyFilter(filter) {
+            const items = document.querySelectorAll('.verification-item');
+            
+            items.forEach(item => {
+                const status = item.getAttribute('data-status');
+                
+                if (filter === 'all' || filter === status) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show empty state if no items visible
+            const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
+            
+            if (visibleItems.length === 0) {
+                document.getElementById('verificationsList').innerHTML += `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <div class="empty-state-text">No ${filter !== 'all' ? filter : ''} verification requests found</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

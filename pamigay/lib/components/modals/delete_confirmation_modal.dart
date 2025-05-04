@@ -18,12 +18,16 @@ class DeleteConfirmationModal extends StatelessWidget {
   /// Whether the confirmation is in progress
   final bool isLoading;
 
+  /// Error message to display (if any)
+  final String? errorMessage;
+
   const DeleteConfirmationModal({
     Key? key,
     required this.itemTitle,
     required this.itemType,
     required this.onConfirm,
     this.isLoading = false,
+    this.errorMessage,
   }) : super(key: key);
 
   /// Shows the delete confirmation modal
@@ -33,6 +37,7 @@ class DeleteConfirmationModal extends StatelessWidget {
     required String itemType,
     required VoidCallback onConfirm,
     bool isLoading = false,
+    String? errorMessage,
   }) {
     return showDialog<bool>(
       context: context,
@@ -41,6 +46,7 @@ class DeleteConfirmationModal extends StatelessWidget {
         itemType: itemType,
         onConfirm: onConfirm,
         isLoading: isLoading,
+        errorMessage: errorMessage,
       ),
     );
   }
@@ -103,13 +109,30 @@ class DeleteConfirmationModal extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
           ),
+          
+          // Error message if provided
+          if (errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              errorMessage!,
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       ),
-      primaryButtonText: 'Delete',
-      onPrimaryButtonPressed: onConfirm,
+      primaryButtonText: errorMessage != null ? 'OK' : 'Delete',
+      onPrimaryButtonPressed: errorMessage != null 
+          ? () => Navigator.of(context).pop(false) 
+          : onConfirm,
       isPrimaryButtonLoading: isLoading,
-      secondaryButtonText: 'Cancel',
-      onSecondaryButtonPressed: () => Navigator.of(context).pop(false),
+      secondaryButtonText: errorMessage != null ? null : 'Cancel',
+      onSecondaryButtonPressed: errorMessage != null 
+          ? null 
+          : () => Navigator.of(context).pop(false),
     );
   }
 }
