@@ -6,8 +6,6 @@ import 'package:pamigay/components/cards/donation_card.dart';
 import 'package:pamigay/screens/common/donation_detail_screen.dart';
 import 'package:pamigay/components/search/search_filter_bar.dart';
 import 'package:intl/intl.dart';
-import 'package:pamigay/components/notifications/notification_badge.dart';
-import 'package:pamigay/screens/common/notifications_screen.dart';
 import 'package:pamigay/screens/common/profile_screen.dart';
 
 /// Organization-specific screen to view and filter available donations from restaurants.
@@ -365,19 +363,6 @@ class _AvailableDonationsScreenState extends State<AvailableDonationsScreen> {
                   ),
                   Row(
                     children: [
-                      // Notification badge
-                      NotificationBadge(
-                        count: 2,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NotificationsScreen(userData: widget.userData),
-                            ),
-                          );
-                        },
-                        iconSize: 24,
-                      ),
                       // Refresh button
                       IconButton(
                         icon: Icon(

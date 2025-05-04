@@ -360,7 +360,7 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          centerTitle: false,
+      
           titleSpacing: 16.0,
           toolbarHeight: 48.0,
           title: const Text(
@@ -371,23 +371,15 @@ class _MyPickupsScreenState extends State<MyPickupsScreen> with SingleTickerProv
             ),
           ),
           actions: [
+            // Refresh button
             IconButton(
-              icon: NotificationBadge(
-                count: 0,
-                onTap: () {},
-                showZeroBadge: false,
+              icon: Icon(
+                Icons.refresh,
+                color: Colors.grey[600],
+                size: 24,
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => NotificationsScreen(
-                      userData: widget.userData,
-                    ),
-                  ),
-                );
-              },
-              color: Colors.black,
+              tooltip: 'Refresh pickups',
+              onPressed: _fetchPickups,
             ),
           ],
           bottom: PreferredSize(

@@ -260,7 +260,7 @@ class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
         ),
         const SizedBox(height: 16),
         
-        // Stats cards
+        // Stats cards - removed Available Donations and Cancelled
         GridView.count(
           crossAxisCount: 2,
           crossAxisSpacing: 16,
@@ -268,183 +268,9 @@ class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            _buildStatCard('Available Donations', _availableDonations.length.toString(), Icons.fastfood),
             _buildStatCard('My Pickups', _myPickups.length.toString(), Icons.delivery_dining),
             _buildStatCard('Completed', '0', Icons.check_circle),
-            _buildStatCard('Cancelled', '0', Icons.cancel),
           ],
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Quick actions
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Montserrat',
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Action cards
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AvailableDonationsScreen(userData: widget.userData),
-                    ),
-                  ).then((_) => _fetchData());
-                },
-                child: _buildActionCard(
-                  'Browse Donations',
-                  Icons.search,
-                  Colors.blue.shade100,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AvailableDonationsScreen(userData: widget.userData),
-                      ),
-                    ).then((_) => _fetchData());
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MyPickupsScreen(userData: widget.userData),
-                    ),
-                  ).then((_) => _fetchData());
-                },
-                child: _buildActionCard(
-                  'My Pickups',
-                  Icons.delivery_dining,
-                  Colors.green.shade100,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MyPickupsScreen(userData: widget.userData),
-                      ),
-                    ).then((_) => _fetchData());
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Available donations section
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Available Donations',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AvailableDonationsScreen(userData: widget.userData),
-                          ),
-                        ).then((_) => _fetchData());
-                      },
-                      child: Text(
-                        'View All',
-                        style: TextStyle(
-                          color: PamigayColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _availableDonations.isEmpty
-                    ? _buildEmptyState(
-                        'No Available Donations',
-                        'Check back later for new donations from restaurants',
-                        Icons.fastfood,
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _availableDonations.length > 3 ? 3 : _availableDonations.length,
-                        itemBuilder: (context, index) {
-                          final donation = _availableDonations[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: PamigayColors.primary.withOpacity(0.2),
-                                child: Icon(
-                                  Icons.fastfood,
-                                  color: PamigayColors.primary,
-                                ),
-                              ),
-                              title: Text(
-                                donation['name'] ?? 'Unnamed Donation',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                '${donation['restaurant_name'] ?? 'Unknown Restaurant'}\n${donation['quantity'] ?? '0'} items • ${donation['category'] ?? 'Uncategorized'}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              isThreeLine: true,
-                              trailing: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade100,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'Available',
-                                  style: TextStyle(
-                                    color: Colors.green.shade800,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              onTap: () {
-                                // Navigate to donation details
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ],
-            ),
-          ),
         ),
         
         const SizedBox(height: 24),
@@ -472,7 +298,7 @@ class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MyPickupsScreen(userData: widget.userData),
+                            builder: (context) => const DashboardScreen(initialIndex: 2),
                           ),
                         ).then((_) => _fetchData());
                       },
@@ -582,43 +408,14 @@ class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
     );
   }
 
-  Widget _buildActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: Colors.black87),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String title, String subtitle, IconData icon) {
+  Widget _buildEmptyState(String title, String message, IconData icon) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(icon, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               title,
@@ -631,7 +428,7 @@ class _OrganizationHomeScreenState extends State<OrganizationHomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              subtitle,
+              message,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey[600],
