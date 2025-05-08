@@ -79,8 +79,18 @@ function setupNavbar() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            // Implement logout logic here
-            window.location.href = 'index.html';
+            // Get the base URL (up to the /public/ directory)
+            const currentPath = window.location.pathname;
+            const publicIndex = currentPath.indexOf('/public/');
+            
+            if (publicIndex !== -1) {
+                // If we're in a subdirectory of /public/, navigate to landing.html in the /public/ directory
+                const basePath = currentPath.substring(0, publicIndex + 8); // +8 for '/public/'
+                window.location.href = basePath + 'landing.html';
+            } else {
+                // Fallback to relative path if we can't determine the base path
+                window.location.href = 'landing.html';
+            }
         });
     }
 }

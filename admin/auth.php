@@ -67,7 +67,7 @@ function logoutAdmin() {
     session_destroy();
     
     // Redirect to login page
-    header("Location: ../public/index.html");
+    header("Location: ../public/landing.html");
     exit;
 }
 
