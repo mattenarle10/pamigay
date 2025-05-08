@@ -183,6 +183,29 @@
         .floating {
             animation: float 6s ease-in-out infinite;
         }
+
+        .back-to-landing {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            border-radius: 30px;
+            background-color: var(--background-color);
+            box-shadow: 
+                var(--neu-distance) var(--neu-distance) var(--neu-blur) var(--shadow-color),
+                calc(-1 * var(--neu-distance)) calc(-1 * var(--neu-distance)) var(--neu-blur) var(--highlight-color);
+            transition: all 0.3s ease;
+        }
+
+        .back-to-landing:hover {
+            transform: translateY(-3px);
+            color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -190,6 +213,11 @@
     <div class="shape shape-1"></div>
     <div class="shape shape-2"></div>
     <div class="shape shape-3"></div>
+    
+    <!-- Back to landing page link -->
+    <a href="landing.html" class="back-to-landing">
+        <i class="bi bi-arrow-left me-2"></i>Back to Home
+    </a>
     
     <div class="login-page">
         <div class="login-container animate__animated animate__fadeIn">
