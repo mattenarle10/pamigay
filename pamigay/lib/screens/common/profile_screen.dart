@@ -220,8 +220,136 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             },
           ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.contact_support, color: PamigayColors.primary),
+            title: const Text(
+              'Contact Admin',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              _showContactDialog(context);
+            },
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Need Assistance?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.email_outlined, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Text(
+                        'pamigayadmin@gmail.com',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Contact us for reports and other requests',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
+    );
+  }
+  
+  void _showContactDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Contact Admin'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'For any inquiries or to request reports, please contact us at:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.email, color: PamigayColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'pamigayadmin@gmail.com',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Response within 24-48 hours',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
