@@ -8,6 +8,13 @@ require_once 'db_connect.php';
 
 // Handle GET request to retrieve dashboard statistics
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    getDashboardStats();
+}
+
+// Function to get dashboard statistics
+function getDashboardStats() {
+    global $conn;
+    
     try {
         $stats = [];
         

@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/neumorphism.css">
+    <!-- Add Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .dashboard-header {
             display: flex;
@@ -94,38 +96,14 @@
             font-size: 0.85rem;
             color: #777;
         }
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin-bottom: 1.5rem;
         }
-        .action-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .chart-card {
             padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-        }
-        .action-card:hover {
-            transform: translateY(-5px);
-        }
-        .action-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-        .action-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        .action-description {
-            font-size: 0.85rem;
-            color: #777;
+            height: 100%;
         }
         .status-badge {
             padding: 0.25rem 0.75rem;
@@ -184,40 +162,46 @@
                 </div>
             </div>
             
-            <!-- Quick Actions -->
+            <!-- Metrics Charts -->
             <div class="neu-card section-card">
                 <div class="section-header">
-                    <h2 class="section-title mb-0">Quick Actions</h2>
+                    <h2 class="section-title mb-0">Metrics</h2>
                 </div>
-                <div class="quick-actions">
-                    <a href="donations.html" class="neu-card action-card">
-                        <div class="action-icon">
-                            <i class="bi bi-box-seam"></i>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="neu-card chart-card">
+                            <h3 class="subsection-title">User Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="userDistributionChart"></canvas>
+                            </div>
                         </div>
-                        <div class="action-title">Manage Donations</div>
-                        <div class="action-description">View and manage all food donations</div>
-                    </a>
-                    <a href="pickups.html" class="neu-card action-card">
-                        <div class="action-icon">
-                            <i class="bi bi-truck"></i>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="neu-card chart-card">
+                            <h3 class="subsection-title">Donation Status</h3>
+                            <div class="chart-container">
+                                <canvas id="donationStatusChart"></canvas>
+                            </div>
                         </div>
-                        <div class="action-title">Manage Pickups</div>
-                        <div class="action-description">View and manage pickup requests</div>
-                    </a>
-                    <a href="verifications.html" class="neu-card action-card">
-                        <div class="action-icon">
-                            <i class="bi bi-shield-check"></i>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="neu-card chart-card">
+                            <h3 class="subsection-title">Pickup Status</h3>
+                            <div class="chart-container">
+                                <canvas id="pickupStatusChart"></canvas>
+                            </div>
                         </div>
-                        <div class="action-title">User Verifications</div>
-                        <div class="action-description">Approve or reject user verification requests</div>
-                    </a>
-                    <a href="users.html" class="neu-card action-card">
-                        <div class="action-icon">
-                            <i class="bi bi-people"></i>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="neu-card chart-card">
+                            <h3 class="subsection-title">Activity Overview</h3>
+                            <div class="chart-container">
+                                <canvas id="activityOverviewChart"></canvas>
+                            </div>
                         </div>
-                        <div class="action-title">Manage Users</div>
-                        <div class="action-description">View and manage user accounts</div>
-                    </a>
+                    </div>
                 </div>
             </div>
             
@@ -363,6 +347,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadNavbar('navbarContainer', 'dashboard');
             
+            // Initialize charts
+            initializeCharts();
+            
             // Set up activity filter
             document.querySelectorAll('[data-filter]').forEach(item => {
                 item.addEventListener('click', function(e) {
@@ -391,7 +378,253 @@
                     }
                 });
             });
+            
+            // Set up refresh button
+            document.getElementById('refreshDashboard').addEventListener('click', function() {
+                DashboardAPI.updateDashboard();
+                updateCharts();
+            });
         });
+        
+        // Chart objects
+        let userDistributionChart;
+        let donationStatusChart;
+        let pickupStatusChart;
+        let activityOverviewChart;
+        
+        // Initialize all charts
+        function initializeCharts() {
+            // Create charts with loading state
+            createEmptyCharts();
+            
+            // Fetch data and update charts
+            DashboardAPI.getStats().then(stats => {
+                updateChartsWithData(stats);
+            }).catch(error => {
+                console.error('Error initializing charts:', error);
+            });
+        }
+        
+        // Create empty charts with loading state
+        function createEmptyCharts() {
+            // User Distribution Chart
+            const userDistCtx = document.getElementById('userDistributionChart').getContext('2d');
+            userDistributionChart = new Chart(userDistCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Loading...'],
+                    datasets: [{
+                        data: [1],
+                        backgroundColor: ['#e9ecef']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+            
+            // Donation Status Chart
+            const donationStatusCtx = document.getElementById('donationStatusChart').getContext('2d');
+            donationStatusChart = new Chart(donationStatusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Loading...'],
+                    datasets: [{
+                        data: [0],
+                        backgroundColor: ['#e9ecef']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Pickup Status Chart
+            const pickupStatusCtx = document.getElementById('pickupStatusChart').getContext('2d');
+            pickupStatusChart = new Chart(pickupStatusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Loading...'],
+                    datasets: [{
+                        data: [0],
+                        backgroundColor: ['#e9ecef']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Activity Overview Chart
+            const activityOverviewCtx = document.getElementById('activityOverviewChart').getContext('2d');
+            activityOverviewChart = new Chart(activityOverviewCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Loading...'],
+                    datasets: [{
+                        label: 'Activity',
+                        data: [0],
+                        borderColor: '#e9ecef',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+        
+        // Update charts with actual data
+        function updateChartsWithData(stats) {
+            // Update User Distribution Chart
+            if (stats.usersByRole && stats.usersByRole.length > 0) {
+                const userLabels = stats.usersByRole.map(item => item.role);
+                const userData = stats.usersByRole.map(item => item.count);
+                const userColors = [
+                    'rgba(75, 192, 192, 0.7)',  // teal
+                    'rgba(54, 162, 235, 0.7)',  // blue
+                    'rgba(153, 102, 255, 0.7)', // purple
+                    'rgba(255, 159, 64, 0.7)'   // orange
+                ];
+                
+                userDistributionChart.data.labels = userLabels;
+                userDistributionChart.data.datasets[0].data = userData;
+                userDistributionChart.data.datasets[0].backgroundColor = userColors;
+                userDistributionChart.update();
+            }
+            
+            // Update Donation Status Chart
+            if (stats.donationsByStatus && stats.donationsByStatus.length > 0) {
+                const donationLabels = stats.donationsByStatus.map(item => item.status);
+                const donationData = stats.donationsByStatus.map(item => item.count);
+                const donationColors = [
+                    'rgba(40, 167, 69, 0.7)',   // green for Available
+                    'rgba(255, 193, 7, 0.7)',   // yellow for Pending
+                    'rgba(0, 123, 255, 0.7)',   // blue for Completed
+                    'rgba(220, 53, 69, 0.7)'    // red for Cancelled
+                ];
+                
+                donationStatusChart.data.labels = donationLabels;
+                donationStatusChart.data.datasets[0].data = donationData;
+                donationStatusChart.data.datasets[0].backgroundColor = donationColors;
+                donationStatusChart.update();
+            }
+            
+            // Update Pickup Status Chart
+            if (stats.pickupsByStatus && stats.pickupsByStatus.length > 0) {
+                const pickupLabels = stats.pickupsByStatus.map(item => item.status);
+                const pickupData = stats.pickupsByStatus.map(item => item.count);
+                const pickupColors = [
+                    'rgba(40, 167, 69, 0.7)',   // green for Requested
+                    'rgba(255, 193, 7, 0.7)',   // yellow for Accepted
+                    'rgba(0, 123, 255, 0.7)',   // blue for Completed
+                    'rgba(220, 53, 69, 0.7)'    // red for Cancelled
+                ];
+                
+                pickupStatusChart.data.labels = pickupLabels;
+                pickupStatusChart.data.datasets[0].data = pickupData;
+                pickupStatusChart.data.datasets[0].backgroundColor = pickupColors;
+                pickupStatusChart.update();
+            }
+            
+            // Update Activity Overview Chart with monthly data
+            updateActivityOverviewChart();
+        }
+        
+        // Update activity overview chart with monthly data
+        function updateActivityOverviewChart() {
+            try {
+                // Instead of using monthly data, let's use existing data from stats endpoint
+                // Create a bar chart showing the distribution of activity
+                const categories = ['Restaurants', 'Organizations', 'Other Users'];
+                
+                // Get values from the dashboard display
+                const restaurantCount = parseInt(document.getElementById('restaurantsValue').textContent) || 0;
+                const organizationCount = parseInt(document.getElementById('organizationsValue').textContent) || 0;
+                const totalUsersCount = parseInt(document.getElementById('totalUsersValue').textContent) || 0;
+                const otherUsersCount = totalUsersCount - restaurantCount - organizationCount;
+                
+                // Get activity values
+                const availableDonations = parseInt(document.getElementById('availableDonationsValue').textContent) || 0;
+                const pendingDonations = parseInt(document.getElementById('pendingDonationsValue').textContent) || 0;
+                const completedDonations = parseInt(document.getElementById('completedDonationsValue').textContent) || 0;
+                
+                const requestedPickups = parseInt(document.getElementById('requestedPickupsValue').textContent) || 0;
+                const acceptedPickups = parseInt(document.getElementById('acceptedPickupsValue').textContent) || 0;
+                const completedPickups = parseInt(document.getElementById('completedPickupsValue').textContent) || 0;
+                
+                // For demonstration, we'll create a comparison between donations and pickups
+                activityOverviewChart.data = {
+                    labels: ['Available Donations', 'Pending Donations', 'Completed Donations', 
+                             'Requested Pickups', 'Accepted Pickups', 'Completed Pickups'],
+                    datasets: [{
+                        label: 'Activity Count',
+                        data: [availableDonations, pendingDonations, completedDonations, 
+                               requestedPickups, acceptedPickups, completedPickups],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.7)',   // green
+                            'rgba(255, 193, 7, 0.7)',   // yellow
+                            'rgba(0, 123, 255, 0.7)',   // blue
+                            'rgba(40, 167, 69, 0.5)',   // light green
+                            'rgba(255, 193, 7, 0.5)',   // light yellow
+                            'rgba(0, 123, 255, 0.5)',   // light blue
+                        ],
+                        borderWidth: 1
+                    }]
+                };
+                
+                activityOverviewChart.options = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Donations vs. Pickups Activity'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                };
+                
+                activityOverviewChart.update();
+            } catch (error) {
+                console.error('Error updating activity overview chart:', error);
+            }
+        }
+        
+        // Update all charts with fresh data
+        function updateCharts() {
+            DashboardAPI.getStats().then(stats => {
+                updateChartsWithData(stats);
+            }).catch(error => {
+                console.error('Error updating charts:', error);
+            });
+        }
     </script>
 </body>
 </html>

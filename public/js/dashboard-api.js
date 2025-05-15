@@ -100,6 +100,11 @@ const DashboardAPI = {
                 }, index * 100);
             });
             
+            // Update charts if they exist
+            if (typeof updateChartsWithData === 'function') {
+                updateChartsWithData(stats);
+            }
+            
         } catch (error) {
             console.error('Error updating dashboard:', error);
             // Show error message
