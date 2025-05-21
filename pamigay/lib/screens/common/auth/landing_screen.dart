@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pamigay/screens/common/auth/login_screen.dart';
 import 'package:pamigay/screens/common/auth/multi_step_register_screen.dart';
 import 'package:pamigay/utils/constants.dart';
+import 'package:pamigay/screens/common/info_screen.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({Key? key}) : super(key: key);
@@ -116,7 +117,27 @@ class LandingScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const InfoScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'More About Pamigay',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    color: Colors.white,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
